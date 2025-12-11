@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Robot Study Entry</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 60px auto;
+      line-height: 1.5;
+      padding: 0 10px;
+    }
+    h1, h2, h3 {
+      text-align: center;
+    }
+    input[type="text"], button, select {
+      font-size: 1em;
+      padding: 0.5em;
+      margin: 0.5em 0;
+    }
+    button[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .progress-box {
+      display: inline-block;
+      border: 1px solid #333;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #f0f0f0;
+      font-family: monospace;
+    }
+    .example-section {
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 32px 36px;
+      background: linear-gradient(to bottom right, #f8fbff, #ffffff);
+      border-radius: 16px;
+      font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e0e0e0;
+      transition: box-shadow 0.3s ease;
+    }
+    .example-instruction {
+      margin-top: 0px;
+    }
+    .video-container {
+      display: flex;
+      gap: 20px;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 10px;
+      flex-wrap: nowrap;
+    }
+    .video-column {
+      width: 48%;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      border: 1px solid #ccc;
+      margin-top: 8px;
+    }
+    #options {
+      border: none;
+      margin-top: 20px;
+      padding: 0;
+      text-align: center; 
+    }
+    #ratingButtonsContainer {
+      display: inline-flex;   
+      justify-content: center; 
+      gap: 10px;              
+      margin-top: 10px;
+    }
+    #intro {
+      max-width: 760px;
+      margin: 25px auto;
+      padding: 32px 36px;
+      background: linear-gradient(to bottom right, #f8fbff, #ffffff);
+      border-radius: 16px;
+      font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e0e0e0;
+      transition: box-shadow 0.3s ease;
+    }
+    #intro:hover {
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
+    }
+    #intro h2, 
+    #intro h3 {
+      color: #000;
+      margin-bottom: 16px;
+    }
+    #intro h2 {
+      font-size: 28px;
+      margin-top: 0;          
+    }
+    #intro h3 {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    #intro p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #333;
+      margin-bottom: 14px;
+    }
+    .input-group {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .input-group input, .input-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      transition: border 0.2s ease;
+    }
+    .input-group input:focus, .input-group select:focus {
+      border-color: #4a90e2;
+      outline: none;
+    }
+    .input-group button {
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: not-allowed;
+      transition: background-color 0.3s ease;
+    }
+    .input-group button:enabled {
+      cursor: pointer;
+      background-color: #1976d2;
+    }
+    .input-group button:enabled:hover {
+      background-color: #1565c0;
+    }
+    #ratingButtonsContainer {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .rating-btn.left {
+      font-size: 18px;
+      font-weight: 600;
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      min-width: 160px;
+      background-color: #e3f2fd;
+      color: #1565c0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    .rating-btn.tie {
+      font-size: 18px;
+      font-weight: 600;
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      min-width: 160px;
+      background-color: #fff3e0;
+      color: #ef6c00;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    .rating-btn.right {
+      font-size: 18px;
+      font-weight: 600;
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      min-width: 160px;
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    .rating-btn.left:hover {
+      background-color: #bbdefb;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+    .rating-btn.tie:hover {
+      background-color: #ffe0b2;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+    .rating-btn.right:hover {
+      background-color: #c8e6c9;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+    .rating-btn.left:active,
+    .rating-btn.tie:active,
+    .rating-btn.right:active {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transform: translateY(0);
+    }
+    .rating-btn.left.selected {
+      background-color: #69aaf5 !important; 
+      color: white !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transform: translateY(0);
+    }
+    .rating-btn.tie.selected {
+      background-color: #ee9f5e !important; 
+      color: white !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transform: translateY(0);
+    }
+    .rating-btn.right.selected {
+      background-color: #6bcf70 !important; 
+      color: white !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transform: translateY(0);
+    }
+    .sub-instruction {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 4px;
+      text-align: center;
+      font-style: italic;
+    }
+    #exampleFeedback {
+      display: none;
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .description-box {
+      margin-top: 16px;
+      text-align: left;
+    }
+    .description-box label {
+      font-weight: 600;
+      font-size: 15px;
+      color: #333;
+    }
+    .description-box textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.2s ease;
+    }
+    .description-box textarea:focus {
+        border-color: #4a90e2;
+        outline: none;
+    }
+    .description-box textarea:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+    }
+    #submitExampleDescriptionsBtn {
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+    }
+    #submitExampleDescriptionsBtn:enabled:hover {
+      background-color: #1565c0;
+    }
+    fieldset:disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to Robot Evaluation Study</h1>
+
+  <div id="intro">
+    <h2>Study Overview</h2>
+    <p>Thank you for participating in our study! Your feedback will help us understand how different robot policies perform on simulated manipulation tasks.</p>
+    <p>In this study, you will watch short video clips showing two robots (side-by-side) attempting to complete the same task (e.g., stacking, moving objects). Each robot follows a different control policy.</p>
+
+    <h3>Your Task</h3>
+    <p>For each pair of videos, you will first briefly describe what each robot did. After submitting your descriptions, you will choose the robot that you think performed better. If their performance was similar, you may indicate that they performed equally well.</p>
+    
+    <h3 style="margin-top: 24px;">Getting Started</h3>
+    <p>Please select your participant type and enter a unique Participant ID to begin. <strong>Using the same ID on the same browser will allow you to resume your progress if you leave and come back later.</strong></p>
+    
+    <div class="input-group">
+      <select id="participantTypeSelect">
+        <option value="">-- Select Participant Type --</option>
+        <option value="paid">Paid Worker (Amazon MTurk or Similar)</option>
+        <option value="free">Volunteer / Free Participant</option>
+      </select>
+      
+      <input id="participantIdInput" type="text" placeholder="Enter your unique ID here" />
+      
+      <div style="margin-top: 8px;">
+        <p style="font-size: 14px; color: #555; margin: 0;">
+          <strong>For Paid Workers:</strong> Please use your official Amazon Worker ID. This is required for payment. You will need to pass a short qualification quiz before starting the main study.
+        </p>
+        <p style="font-size: 14px; color: #555; margin: 4px 0 0 0;">
+          <strong>For Volunteers:</strong> Please create a unique identifier for yourself.
+        </p>
+      </div>
+      
+      <button id="startButton" disabled>Start Study</button>
+    </div>
+  </div>
+
+<div class="example-section">
+  <h3 style="font-size: 22px; text-align: center;">What to Expect</h3>
+  <p style="font-size: 18px;">Here's an example trial. First, watch the videos and describe each robot's attempt in the text boxes below. After submitting your descriptions, you'll be able to evaluate which robot did better.</p>
+
+  <div class="task-instruction" style="padding: 10px; margin: 10px 0; font-size: 19px; font-weight: bold;">
+    Task: <em>Put the yellow object on top of the green object</em>
+  </div>
+
+  <div class="video-container">
+    <div class="video-column" style="background: #f0f0f0; padding: 12px; border-radius: 8px; border: 1px solid #ccc;">
+      <h2 style="background: #e3f2fd; padding: 8px; border-radius: 6px;">Policy A </h2>
+      <video controls>
+        <source src="./test_put the yellow object on top of the green object_1.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <div class="description-box">
+        <label for="descriptionLeftExample">Describe Policy A's attempt:</label>
+        <textarea id="descriptionLeftExample" rows="3" placeholder="e.g., The robot reaches the yellow object, picks it up and then drops it without putting it on the green object."></textarea>
+      </div>
+    </div>
+
+    <div class="video-column" style="background: #f0f0f0; padding: 12px; border-radius: 8px; border: 1px solid #ccc;">
+      <h2 style="background: #e8f5e9; padding: 8px; border-radius: 6px;">Policy B </h2>
+      <video controls>
+        <source src="./test_put the yellow object on top of the green object_0.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <div class="description-box">
+        <label for="descriptionRightExample">Describe Policy B's attempt:</label>
+        <textarea id="descriptionRightExample" rows="3" placeholder="e.g., The robot reaches the yellow object, closes the gripper without picking it up."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="exampleDescriptionSubmitContainer" style="text-align: center; margin: 24px 0;">
+      <button type="button" id="submitExampleDescriptionsBtn" disabled>Submit Descriptions</button>
+      <p class="sub-instruction">Please provide descriptions for both videos to continue.</p>
+  </div>
+
+  <form id="responseForm">
+    <fieldset id="options" disabled>
+      <legend style="font-weight: bold; font-size: 18px; text-align: center; margin-bottom: 8px;">Your Evaluation:</legend>
+      <div id="ratingButtonsContainer">
+        <button type="button" class="rating-btn left" data-value="0">👈 Left is Better</button>
+        <button type="button" class="rating-btn tie" data-value="1">🤝 Tie</button>
+        <button type="button" class="rating-btn right" data-value="2">Right is Better 👉</button>
+      </div>
+      <div class="sub-instruction">(equally good or equally bad)</div>
+    </fieldset>
+  </form>
+  <p style="font-size: 16px; text-align: center; margin-top: 24px;">After you complete all clips, you will receive a completion code to submit for credit.</p>
+</div>
+
+  <script>
+    (function() {
+      const typeSelect = document.getElementById('participantTypeSelect');
+      const idInput = document.getElementById('participantIdInput');
+      const startButton = document.getElementById('startButton');
+
+      function checkInputs() {
+        startButton.disabled = !typeSelect.value || !idInput.value.trim();
+      }
+
+      typeSelect.addEventListener('change', checkInputs);
+      idInput.addEventListener('input', checkInputs);
+
+      startButton.addEventListener('click', () => {
+        const type = typeSelect.value;
+        const pid = idInput.value.trim();
+        
+        if (!type || !pid) {
+          alert('Please select a participant type and enter your ID');
+          return;
+        }
+        
+        localStorage.setItem('participantType', type);
+        localStorage.setItem('participantId', pid);
+        window.location.href = 'videos.html';
+      });
+    })();
+
+    // Example section interactivity
+    (function() {
+      const exampleSection = document.querySelector('.example-section');
+      const descriptionLeft = exampleSection.querySelector('#descriptionLeftExample');
+      const descriptionRight = exampleSection.querySelector('#descriptionRightExample');
+      const submitBtn = exampleSection.querySelector('#submitExampleDescriptionsBtn');
+      const evaluationFieldset = exampleSection.querySelector('#options');
+      const submitContainer = exampleSection.querySelector('#exampleDescriptionSubmitContainer');
+      const ratingButtons = exampleSection.querySelectorAll('.rating-btn');
+
+      function checkDescriptions() {
+        const leftFilled = descriptionLeft.value.trim() !== '';
+        const rightFilled = descriptionRight.value.trim() !== '';
+        submitBtn.disabled = !(leftFilled && rightFilled);
+      }
+      descriptionLeft.addEventListener('input', checkDescriptions);
+      descriptionRight.addEventListener('input', checkDescriptions);
+
+      submitBtn.addEventListener('click', function() {
+        descriptionLeft.disabled = true;
+        descriptionRight.disabled = true;
+        submitContainer.style.display = 'none';
+        evaluationFieldset.disabled = false;
+      });
+
+      function handleRatingClick(event) {
+        const selectedButton = event.currentTarget;
+        ratingButtons.forEach(button => button.classList.remove('selected'));
+        selectedButton.classList.add('selected');
+      }
+      ratingButtons.forEach(button => {
+        button.addEventListener('click', handleRatingClick);
+      });
+    })();
+  </script>
+
+</body>
+</html>
