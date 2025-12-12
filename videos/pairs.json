@@ -34014,11 +34014,11 @@
   {
     "instruction": "test_move the cylinder to the right side of the chess pawn_0_2",
     "videoA": {
-      "path": "videos/cogact/test_move the cylinder to the right side of the chess pawn_0_2.mp4",
+      "path": "videos/octo/test_move the cylinder to the right side of the chess pawn_0_2.mp4",
       "source": "octo"
     },
     "videoB": {
-      "path": "videos/octo/test_move the cylinder to the right side of the chess pawn_0_2.mp4",
+      "path": "videos/cogact/test_move the cylinder to the right side of the chess pawn_0_2.mp4",
       "source": "cogact"
     }
   },
