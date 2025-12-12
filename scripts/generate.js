@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const VIDEO_ROOT = path.join(__dirname, 'videos');
+const VIDEO_ROOT = path.join(__dirname, '../videos');
 const EXCLUDED_DIR = 'real';
 const OUTPUT_FILE = path.join(VIDEO_ROOT, 'pairs.json');
 const NUM_VIDEOS = 6; // Set number of videos per task here
