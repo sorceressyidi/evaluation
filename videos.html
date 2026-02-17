@@ -256,7 +256,7 @@
       const STUDY_CONFIG = {
         // Main study settings
         MAX_MAIN_STUDY_VIDEOS: 150,
-        MIN_VIDEOS_TO_FINISH: 30,
+        MIN_VIDEOS_TO_FINISH: 10,
         
         // Quiz configuration for paid workers
         QUIZ_PASS_THRESHOLD: 0.8,  // 80% correct to pass (8 out of 10)
@@ -622,23 +622,24 @@
           const batchEnd = Math.min(batchStart + STUDY_CONFIG.SANITY_CHECK.BATCH_SIZE, totalVideos);
           const batchSize = batchEnd - batchStart;
           
-          // For this batch, we need to insert CHECKS_PER_BATCH sanity checks
-          const checksInBatch = Math.min(STUDY_CONFIG.SANITY_CHECK.CHECKS_PER_BATCH, batchSize);
-          const regularInBatch = batchSize - checksInBatch;
-          
-          // Build the batch with regular videos
+          // Build the batch
           const batchVideos = [];
-          for (let i = 0; i < regularInBatch && regularIndex < regularIndices.length; i++) {
-            batchVideos.push({ type: 'regular', index: regularIndices[regularIndex++] });
-          }
+          
+          // First, determine how many sanity checks we can actually add
+          const availableSanity = sanityPoolCopy.length - sanityPoolIndex;
+          const checksInBatch = Math.min(STUDY_CONFIG.SANITY_CHECK.CHECKS_PER_BATCH, batchSize, availableSanity);
           
           // Add sanity checks to the batch
           for (let i = 0; i < checksInBatch; i++) {
-            if (sanityPoolIndex < sanityPoolCopy.length) {
-              const sanityIdx = sanityPoolCopy[sanityPoolIndex++];
-              batchVideos.push({ type: 'sanity', index: sanityIdx });
-              usedSanityIndices.push(sanityIdx);
-            }
+            const sanityIdx = sanityPoolCopy[sanityPoolIndex++];
+            batchVideos.push({ type: 'sanity', index: sanityIdx });
+            usedSanityIndices.push(sanityIdx);
+          }
+          
+          // Fill the rest with regular videos
+          const regularInBatch = batchSize - checksInBatch;
+          for (let i = 0; i < regularInBatch && regularIndex < regularIndices.length; i++) {
+            batchVideos.push({ type: 'regular', index: regularIndices[regularIndex++] });
           }
           
           // Shuffle the batch so sanity checks are randomly positioned within the 10
@@ -650,6 +651,8 @@
           }
         }
         
+        console.log(`📊 Built sequence: ${sequence.length} total, ${usedSanityIndices.length} sanity checks, regularIndex=${regularIndex}`);
+        
         return { sequence: sequence.slice(0, totalVideos), sanityIndices: usedSanityIndices };
       }
 
@@ -659,6 +662,21 @@
         if (savedProgress) {
           participantState = savedProgress;
           participantState.sessionStartTime = Date.now();
+          
+          // 🔍 DEBUG: Restored progress
+          console.log(`\n🔄 ========== RESTORED PROGRESS ==========`);
+          console.log(`Phase: ${participantState.phase}`);
+          console.log(`Participant Type: ${participantState.participantType}`);
+          if (participantState.phase === 'quiz') {
+            console.log(`Quiz Progress: ${participantState.quizCurrentIndex}/${participantState.quizIndices.length}`);
+            console.log(`Quiz Indices: ${participantState.quizIndices.join(', ')}`);
+          }
+          console.log(`Main Study Progress: ${participantState.mainStudyCurrentIndex}/${participantState.mainStudySequence.length}`);
+          console.log(`Sanity Check Indices (${participantState.sanityCheckIndices.length}): ${participantState.sanityCheckIndices.join(', ')}`);
+          console.log(`First 20 of sequence: ${participantState.mainStudySequence.slice(0, 20).join(', ')}`);
+          console.log(`Sanity Failures: ${participantState.sanityFailures || 0}`);
+          console.log(`==========================================\n`);
+          
           runPhase();
           return;
         }
@@ -694,6 +712,15 @@
           participantState.sanityCheckIndices = sanityIndices;
           participantState.phase = 'quiz';
           
+          // 🔍 DEBUG: Initial setup for paid worker
+          console.log(`\n🚀 ========== FRESH START (PAID) ==========`);
+          console.log(`Quiz Indices (${participantState.quizIndices.length}): ${participantState.quizIndices.join(', ')}`);
+          console.log(`Sanity Pool Size: ${sanityPool.length}`);
+          console.log(`Sanity Check Indices (${sanityIndices.length}): ${sanityIndices.join(', ')}`);
+          console.log(`Main Study Sequence Length: ${sequence.length}`);
+          console.log(`First 20 of sequence: ${sequence.slice(0, 20).join(', ')}`);
+          console.log(`===========================================\n`);
+          
         } else {
           // Free workers: no quiz, directly to main study with sanity checks
           // All 40 quiz pairs can be used for sanity checks
@@ -710,6 +737,14 @@
           participantState.mainStudySequence = sequence;
           participantState.sanityCheckIndices = sanityIndices;
           participantState.phase = 'main_study';
+          
+          // 🔍 DEBUG: Initial setup for free worker
+          console.log(`\n🚀 ========== FRESH START (FREE) ==========`);
+          console.log(`Sanity Pool Size: ${allQuizIndices.length}`);
+          console.log(`Sanity Check Indices (${sanityIndices.length}): ${sanityIndices.join(', ')}`);
+          console.log(`Main Study Sequence Length: ${sequence.length}`);
+          console.log(`First 20 of sequence: ${sequence.slice(0, 20).join(', ')}`);
+          console.log(`==========================================\n`);
         }
         
         participantState.sessionStartTime = Date.now();
@@ -792,10 +827,21 @@
           finishEarlyContainer.classList.add('hidden');
         }
 
-        progressElem.textContent = `Video ${participantState.mainStudyCurrentIndex + 1} of ${participantState.mainStudySequence.length}`;
+        const position = participantState.mainStudyCurrentIndex;
+        const originalIndex = participantState.mainStudySequence[position];
+        const isSanity = participantState.sanityCheckIndices.includes(originalIndex);
         
-        const originalIndex = participantState.mainStudySequence[participantState.mainStudyCurrentIndex];
+        progressElem.textContent = `Video ${position + 1} of ${participantState.mainStudySequence.length}`;
+        
+        // Debug log
+        console.log(`📹 Loading video: position=${position}, pairIndex=${originalIndex}, isSanity=${isSanity}`);
+        
         const pair = allPairs[originalIndex];
+        if (!pair) {
+          console.error(`❌ ERROR: No pair found at index ${originalIndex}!`);
+          showErrorModal(`Video pair not found at index ${originalIndex}. Please contact support.`);
+          return;
+        }
         loadVideos(pair);
       }
 
@@ -865,6 +911,18 @@
           const quizItem = ALL_QUIZ_PAIRS[originalIndex];
           const isCorrect = selectedPreference === quizItem.correct_answer;
           
+          // 🔍 DEBUG: Quiz submission
+          const currentPair = allPairs[originalIndex];
+          console.log(`\n========== QUIZ SUBMIT ==========`);
+          console.log(`Quiz #${participantState.quizCurrentIndex + 1}/${participantState.quizIndices.length}`);
+          console.log(`Pair Index: ${originalIndex}`);
+          console.log(`VideoA: ${currentPair?.videoA?.path}`);
+          console.log(`VideoB: ${currentPair?.videoB?.path}`);
+          console.log(`User Answer: ${selectedPreference}`);
+          console.log(`Correct Answer: ${quizItem.correct_answer}`);
+          console.log(`Result: ${isCorrect ? '✅ CORRECT' : '❌ WRONG'}`);
+          console.log(`==================================\n`);
+          
           if (isCorrect) {
             participantState.quizScore++;
           }
@@ -891,6 +949,23 @@
           
           // Check if this is a sanity check (hidden from user)
           const isSanityCheck = participantState.sanityCheckIndices.includes(originalIndex);
+          
+          // 🔍 DEBUG: Main study submission
+          const currentPair = allPairs[originalIndex];
+          console.log(`\n========== MAIN STUDY SUBMIT ==========`);
+          console.log(`Position: ${position + 1}/${participantState.mainStudySequence.length}`);
+          console.log(`Pair Index: ${originalIndex}`);
+          console.log(`Type: ${isSanityCheck ? '🔴 SANITY CHECK' : '⚪ REGULAR'}`);
+          console.log(`Instruction: ${currentPair?.instruction}`);
+          console.log(`VideoA: ${currentPair?.videoA?.path}`);
+          console.log(`VideoB: ${currentPair?.videoB?.path}`);
+          console.log(`User Answer: ${selectedPreference}`);
+          if (isSanityCheck) {
+            const quizItem = ALL_QUIZ_PAIRS[originalIndex];
+            console.log(`Correct Answer: ${quizItem?.correct_answer}`);
+            console.log(`Result: ${selectedPreference === quizItem?.correct_answer ? '✅ CORRECT' : '❌ WRONG'}`);
+          }
+          console.log(`========================================\n`);
           
           if (isSanityCheck) {
             const quizItem = ALL_QUIZ_PAIRS[originalIndex];
