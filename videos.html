@@ -259,29 +259,26 @@
         MIN_VIDEOS_TO_FINISH: 30,
         
         // Quiz configuration for paid workers
-        QUIZ_PASS_THRESHOLD: 0.8,  // 80% correct to pass
-        NUM_INITIAL_QUIZ: 5,       // Number of quiz videos shown at the start (for paid workers)
+        QUIZ_PASS_THRESHOLD: 0.8,  // 80% correct to pass (8 out of 10)
+        NUM_INITIAL_QUIZ: 10,      // Number of quiz videos shown at the start (for paid workers)
         
         // Sanity check configuration
-        // For paid workers: uses remaining quiz pairs (10 - NUM_INITIAL_QUIZ = 5 pairs)
-        // For free workers: uses all 10 quiz pairs
+        // Every 10 videos, 2 random sanity checks are inserted (from the 40 quiz pairs pool)
+        // If user fails 2 total sanity checks, they are kicked out
         SANITY_CHECK: {
-          // Distribution of sanity checks throughout the main study
-          // Format: [numChecks, beforeVideoIndex]
-          // Example: [5, 30] means place 5 sanity checks within the first 30 videos
-          // You can have multiple ranges: [[3, 30], [2, 60]] would place 3 in first 30, then 2 more in videos 30-60
-            DISTRIBUTION_PAID: [
-              [5, 30]   // 5 sanity checks for paid workers
-            ],
-            DISTRIBUTION_FREE: [
-              [10, 30]  // 10 sanity checks for free workers
-            ]
+          CHECKS_PER_BATCH: 2,      // 2 sanity checks per every 10 videos
+          BATCH_SIZE: 10,           // Every 10 videos
+          MAX_FAILURES: 2           // Kick out after 2 wrong sanity checks total
         }
       };
 
-      // Quiz pairs with their correct answers and explanations
-      // These 10 pairs have known correct answers
-      const QUIZ_PAIRS = {
+      // All quiz pairs pool (40 pairs total)
+      // These are used for:
+      // - Paid workers: First 10 as initial quiz, remaining used for sanity checks
+      // - Free workers: All used for sanity checks (2 per every 10 videos)
+      // If user fails 2 sanity checks total, they are kicked out
+      const ALL_QUIZ_PAIRS = {
+        // Original 10 quiz pairs (used for initial quiz for paid workers)
         13: { 
           correct_answer: 'left', 
           explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot only reaches the can without moving it.' 
@@ -300,7 +297,7 @@
         },
         695: { 
           correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the blue cloth, makes some attempts to finish the task and moves the cloth a bit.\nPolicy B: The right robot makes no meaningful movement.' 
+          explanation: 'Policy A: The left robot reaches the cloth, makes some attempts to finish the task and moves the cloth a bit.\nPolicy B: The right robot makes no meaningful movement.' 
         },
         2544: { 
           correct_answer: 'left', 
@@ -314,15 +311,166 @@
           correct_answer: 'right', 
           explanation: 'Policy A: The left robot makes no meaningful move. \nPolicy B:The right robot reaches the cylinder, and moves it to the right of the chess pawn.'
         },
-        4794: { 
-          correct_answer: 'same', 
-          explanation: 'Policy A: The left robot makes no meaningful move. \n Policy B: The right robot makes no meaningful move. \n' 
+        4790: { 
+          correct_answer: 'right', 
+          explanation: 'Policy A: The left robot makes no meaningful move. \n Policy B: The right robot moves the cylinder to the right side of the chess pawn. \n' 
         },
         8230: { 
           correct_answer: 'same', 
           explanation: 'Policy A: The left robot moves closer to the knife but does not pick it up.\nPolicy B: The right robot moves closer to the knife but does not pick it up.' 
         },
+        // Additional 30 quiz pairs for sanity checks (selected using this tool)
+        // Move the can to the right of the pot (octo vs spatial)
+        1: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot only reaches the can without moving it.'
+        },
+        // Move the can to the right of the pot (cogact vs octo)
+        100: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot moves the can to the right of the pot.\nPolicy B: The right robot reaches the can and then attemps to move it a bit but fails to finish the task.'
+        },
+        // Move the cheese into the silver pot (octo vs xvla)
+        200: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the cheese.\nPolicy B: The right robot reaches the cheese, picks it up and puts it beside the silver pot.'
+        },
+        // Move the cheese into the silver pot (octo vs robovlm)
+        300: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot makes no meaningful movement.\nPolicy B: The right robot reaches the cheese and moves it beside the silver pot.'
+        },
+        800: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the knife, picks it up and puts it a little down between the pot and the pepper\nPolicy B: The right robot reaches the knife and tries to pick it up.'
+        },
+        900: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot reaches the pot and only tries to pick it up.\nPolicy B: The right robot reaches the pot, picks it up and puts it on the towel.'
+        },
+        // Pick up milk bottle (cogact vs spatial)
+        1100: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot reaches and moves it blue cloth.\nPolicy B: The right robot reaches the picks up the milk bottle.'
+        },
+        // Pick up the salmon and put it in the pot (cogact vs robovlm)
+        1300: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the salmon, picks it up and puts inside the pot.\nPolicy B: The right robot only reaches the pot.'
+        },
+        1600: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the brush, picks it up and puts it on the napkin.\nPolicy B: The right robot only reaches the brush without picking it up.'
+        },
+        // Place the metal pot on the front left corner of the purple towel (octo vs spatial)
+        2000: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot makes no meaningful movement.\nPolicy B: The right robot reaches the pot and tries to pick it up.\n   '
+        },
+        // Put the metal pan on the blue cloth (cogact vs spatial)
+        2700: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the pan, picks it up and puts it on the blue cloth\nPolicy B: The right robot makes no meaningful movement.'
+        },
+        // Put the metal pan on the blue cloth_test0 (pi0 vs spatial)
+        2800: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the pan, picks it up and on the cloth.\nPolicy B: The right robot only reaches the pan.'
+        },
+        // Put the spoon on top of the purple towel (cogact vs octo)
+        3000: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the spoon, picks it up and puts it on the cloth.\nPolicy B: The right robot only reaches spoon a bit.'
+        },
+        // Put the stuffed dog inside the pot (pi0 vs spatial)
+        3171: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the stuffed dog, picks it up and puts beside the pot.\nPolicy B: The right robot only reaches the stuffed dog and picks it up.'
+        },
+        // Put the stuffed dog inside the pot_test0 (cogact vs robovlm)
+        3301: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the stuffed dog.\nPolicy B: The right robot reaches the stuffed dog, picks it up and puts it inside the pot.'
+        },
+        // Put the stuffed dog inside the pot_test0 (octo vs pi0)
+        3331: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the stuffed dog.\nPolicy B: The right robot reaches the stuffed dog, picks it up and puts it inside the pot.'
+        },
+        // Put the stuffed dog inside the pot_test0 (octo vs xvla)
+        3340: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the stuffed dog.\nPolicy B: The right robot reaches the stuffed dog, picks it up and puts it inside the pot.'
+        },
+        // move blue cloth from center to right bottom corner (cogact vs spatial)
+        3600: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches cloth and moves it a bit to the right bottom corner\nPolicy B: The right robot only reaches the cloth.'
+        },
+        // move the blue brush to the upper left corner of the table (pi0 vs xvla)
+        4300: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the brush.\nPolicy B: The right robot reaches the blue brush and moves it to the upper left corner of the table'
+        },
+        // move the cylinder to the right side of the chess pawn (cogact vs octo)
+        4700: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot only reaches the cylinder and moves it a bit to the right.\nPolicy B: The right robot makes no meaningful movement.'
+        },
+        // moved the brown transparent bowl to the right side of the table (robovlm vs xvla)
+        6400: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the bowl and tries to pick it up.\nPolicy B: The right robot reaches the bowl and picks it up.'
+        },
+        // put banana in colander_test0 (octo vs pi0)
+        7400: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the banana and picks it up.\nPolicy B: The right robot reaches the banana, picks it up and puts it inside the pot.'
+        },
+        // put banana in colander_test0 (pi0 vs xvla)
+        7404: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the banana and puts it inside the pot.\nPolicy B: The right robot reaches pot.'
+        },
+        // put banana in colander_test0 (spatial vs xvla)
+        7411: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the banana and tries to pick it up.\nPolicy B: The right robot reaches the banana, picks it up and puts it inside the pot.'
+        },
+        // put banana in colander_test0 (cogact vs xvla)
+        7423: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the banana and tries to pick it up.\nPolicy B: The right robot reaches the banana, picks it up and puts it inside the pot.'
+        },
+        // put blue cube to left corner of the table (cogact vs robovlm)
+        7517: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the blue cube and picks it up.\nPolicy B: The right robot makes no meaningful movement.'
+        },
+        // put knife on towel (pi0 vs spatial)
+        8407: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the knife, picks it up and puts it on the green cloth.\nPolicy B: The right robot only reaches the knife and tries to pick it up.'
+        },
+        // put knife on towel (spatial vs xvla)
+        8408: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the knife.\nPolicy B: The right robot reaches the knife, picks it up and puts it on the green cloth.'
+        },
+        // put knife on towel_test0 (octo vs xvla)
+        8503: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the knife.\nPolicy B: The right robot reaches the knife, picks it up and puts it on the green cloth.'
+        },
+        // put lid on pot (cogact vs pi0)
+        8506: {
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot only reaches the lid.\nPolicy B: The right robot reaches the lid, picks it up and puts it on the pot.'
+        }
       };
+
+      // First 10 indices are used for initial quiz (paid workers only)
+      const INITIAL_QUIZ_INDICES = [13, 25, 52, 638, 695, 2544, 4210, 4683, 4790, 8230];
 
       // ========== END CONFIGURATION ==========
 
@@ -389,10 +537,10 @@
         mainStudyCurrentIndex: 0,
         
         // Sanity check tracking (hidden from user)
-        sanityCheckIndices: [],    // Which indices are sanity checks
-        sanityCheckPositions: {},  // Map of position -> sanity check index
+        // Every 10 videos, 2 random sanity checks are inserted
+        sanityCheckIndices: [],    // Which pair indices are sanity checks
         sanityCheckResults: [],    // Results of sanity checks: [{index, correct, position}]
-        failedSanityCheck: false,
+        sanityFailures: 0,         // Total count of failures (kick out at 2)
         
         // Responses and timing
         responses: [],
@@ -451,53 +599,58 @@
       }
 
       /**
-       * Distributes sanity check indices throughout the main study sequence
-       * @param {number[]} sanityIndices - The quiz pair indices to use as sanity checks
-       * @param {number[]} regularIndices - The regular video indices
-       * @returns {Object} - { sequence: combined array, positions: map of position -> sanity index }
+       * Builds the main study sequence with sanity checks distributed every 10 videos
+       * @param {number[]} sanityPool - Pool of quiz pair indices to randomly select from
+       * @param {number[]} regularIndices - Regular video indices
+       * @param {number} totalVideos - Total number of videos in main study
+       * @returns {Object} - { sequence: combined array, sanityIndices: which indices are sanity checks }
        */
-      function distributeSanityChecks(sanityIndices, regularIndices, distribution) {
-
-        const sequence = [...regularIndices];
-        const positions = {};
+      function buildMainStudySequence(sanityPool, regularIndices, totalVideos) {
+        const sequence = [];
+        const usedSanityIndices = [];
+        const sanityPoolCopy = [...sanityPool];
+        shuffleArray(sanityPoolCopy);
         
-        let sanityIdx = 0;
-        let insertedCount = 0;
+        let sanityPoolIndex = 0;
+        let regularIndex = 0;
         
-        for (const [numChecks, beforeIndex] of distribution) {
-          for (let i = 0; i < numChecks && sanityIdx < sanityIndices.length; i++) {
-            // Calculate random position within this range
-            const rangeStart = insertedCount > 0 ? 
-              Object.keys(positions).map(Number).reduce((max, p) => Math.max(max, p), 0) + 1 : 0;
-            const rangeEnd = Math.min(beforeIndex + insertedCount, sequence.length);
-            
-            if (rangeStart >= rangeEnd) continue;
-            
-            const position = rangeStart + Math.floor(Math.random() * (rangeEnd - rangeStart));
-            
-            // Insert sanity check at this position
-            sequence.splice(position, 0, sanityIndices[sanityIdx]);
-            positions[position] = sanityIndices[sanityIdx];
-            
-            // Update positions map for shifted indices
-            const newPositions = {};
-            for (const [pos, idx] of Object.entries(positions)) {
-              const posNum = Number(pos);
-              if (posNum >= position && posNum !== position) {
-                newPositions[posNum + 1] = idx;
-              } else {
-                newPositions[posNum] = idx;
-              }
+        // Calculate how many batches of 10 we need
+        const numBatches = Math.ceil(totalVideos / STUDY_CONFIG.SANITY_CHECK.BATCH_SIZE);
+        
+        for (let batch = 0; batch < numBatches; batch++) {
+          const batchStart = batch * STUDY_CONFIG.SANITY_CHECK.BATCH_SIZE;
+          const batchEnd = Math.min(batchStart + STUDY_CONFIG.SANITY_CHECK.BATCH_SIZE, totalVideos);
+          const batchSize = batchEnd - batchStart;
+          
+          // For this batch, we need to insert CHECKS_PER_BATCH sanity checks
+          const checksInBatch = Math.min(STUDY_CONFIG.SANITY_CHECK.CHECKS_PER_BATCH, batchSize);
+          const regularInBatch = batchSize - checksInBatch;
+          
+          // Build the batch with regular videos
+          const batchVideos = [];
+          for (let i = 0; i < regularInBatch && regularIndex < regularIndices.length; i++) {
+            batchVideos.push({ type: 'regular', index: regularIndices[regularIndex++] });
+          }
+          
+          // Add sanity checks to the batch
+          for (let i = 0; i < checksInBatch; i++) {
+            if (sanityPoolIndex < sanityPoolCopy.length) {
+              const sanityIdx = sanityPoolCopy[sanityPoolIndex++];
+              batchVideos.push({ type: 'sanity', index: sanityIdx });
+              usedSanityIndices.push(sanityIdx);
             }
-            positions[position] = sanityIndices[sanityIdx];
-            Object.assign(positions, newPositions);
-            
-            sanityIdx++;
-            insertedCount++;
+          }
+          
+          // Shuffle the batch so sanity checks are randomly positioned within the 10
+          shuffleArray(batchVideos);
+          
+          // Add batch to sequence
+          for (const video of batchVideos) {
+            sequence.push(video.index);
           }
         }
         
-        return { sequence, positions };
+        return { sequence: sequence.slice(0, totalVideos), sanityIndices: usedSanityIndices };
       }
 
       function initializeStudy() {
@@ -511,51 +664,51 @@
         }
         
         // Fresh start - set up the study
-        const allQuizIndices = Object.keys(QUIZ_PAIRS).map(Number);
-        shuffleArray(allQuizIndices);
+        const allQuizIndices = Object.keys(ALL_QUIZ_PAIRS).map(Number);
         
         // Get all video indices and filter out quiz pairs
         const allIndices = Array.from({ length: allPairs.length }, (_, i) => i);
-        const regularIndices = allIndices.filter(i => !allQuizIndices.includes(i));
+        const quizSet = new Set(allQuizIndices);
+        const regularIndices = allIndices.filter(i => !quizSet.has(i));
         shuffleArray(regularIndices);
         
         if (isPaidWorker) {
-          // Paid workers: initial quiz + sanity checks
+          // Paid workers: 10 initial quiz questions, then main study with sanity checks
           
-          // First NUM_INITIAL_QUIZ pairs are for the quiz
-          participantState.quizIndices = allQuizIndices.slice(0, STUDY_CONFIG.NUM_INITIAL_QUIZ);
+          // Use the designated initial quiz indices
+          participantState.quizIndices = [...INITIAL_QUIZ_INDICES];
+          shuffleArray(participantState.quizIndices);
           
-          // Remaining pairs are for sanity checks
-          const sanityIndices = allQuizIndices.slice(STUDY_CONFIG.NUM_INITIAL_QUIZ);
-          participantState.sanityCheckIndices = sanityIndices;
+          // For sanity checks, use the remaining quiz pairs (not used in initial quiz)
+          const initialQuizSet = new Set(INITIAL_QUIZ_INDICES);
+          const sanityPool = allQuizIndices.filter(i => !initialQuizSet.has(i));
           
-          // Build main study sequence with sanity checks distributed
-          const mainRegular = regularIndices.slice(0, STUDY_CONFIG.MAX_MAIN_STUDY_VIDEOS - sanityIndices.length);
-          const { sequence, positions } = distributeSanityChecks(
-            sanityIndices, 
-            mainRegular, 
-            STUDY_CONFIG.SANITY_CHECK.DISTRIBUTION_PAID
+          // Build main study sequence with 2 sanity checks per 10 videos
+          const { sequence, sanityIndices } = buildMainStudySequence(
+            sanityPool,
+            regularIndices,
+            STUDY_CONFIG.MAX_MAIN_STUDY_VIDEOS
           );
-          participantState.mainStudySequence = sequence.slice(0, STUDY_CONFIG.MAX_MAIN_STUDY_VIDEOS);
-          participantState.sanityCheckPositions = positions;
+          
+          participantState.mainStudySequence = sequence;
+          participantState.sanityCheckIndices = sanityIndices;
           participantState.phase = 'quiz';
           
         } else {
-          // Free workers: no quiz, all 10 pairs as sanity checks
+          // Free workers: no quiz, directly to main study with sanity checks
+          // All 40 quiz pairs can be used for sanity checks
           
           participantState.quizIndices = [];
-          participantState.sanityCheckIndices = allQuizIndices;
           
-          // Build main study sequence with all sanity checks distributed
-          const mainRegular = regularIndices.slice(0, STUDY_CONFIG.MAX_MAIN_STUDY_VIDEOS - allQuizIndices.length);
-          const { sequence, positions } = distributeSanityChecks(
-              allQuizIndices, 
-              mainRegular, 
-              STUDY_CONFIG.SANITY_CHECK.DISTRIBUTION_FREE
-            );
+          // Build main study sequence with 2 sanity checks per 10 videos
+          const { sequence, sanityIndices } = buildMainStudySequence(
+            allQuizIndices,
+            regularIndices,
+            STUDY_CONFIG.MAX_MAIN_STUDY_VIDEOS
+          );
           
-          participantState.mainStudySequence = sequence.slice(0, STUDY_CONFIG.MAX_MAIN_STUDY_VIDEOS);
-          participantState.sanityCheckPositions = positions;
+          participantState.mainStudySequence = sequence;
+          participantState.sanityCheckIndices = sanityIndices;
           participantState.phase = 'main_study';
         }
         
@@ -707,9 +860,9 @@
         const descRightText = descriptionRight.value;
 
         if (participantState.phase === 'quiz') {
-          // Quiz phase (paid workers only)
+          // Quiz phase (paid workers only - 10 initial quiz questions)
           const originalIndex = participantState.quizIndices[participantState.quizCurrentIndex];
-          const quizItem = QUIZ_PAIRS[originalIndex];
+          const quizItem = ALL_QUIZ_PAIRS[originalIndex];
           const isCorrect = selectedPreference === quizItem.correct_answer;
           
           if (isCorrect) {
@@ -740,7 +893,7 @@
           const isSanityCheck = participantState.sanityCheckIndices.includes(originalIndex);
           
           if (isSanityCheck) {
-            const quizItem = QUIZ_PAIRS[originalIndex];
+            const quizItem = ALL_QUIZ_PAIRS[originalIndex];
             const isCorrect = selectedPreference === quizItem.correct_answer;
             
             participantState.sanityCheckResults.push({
@@ -760,9 +913,16 @@
             });
             
             if (!isCorrect) {
-              // Record failed sanity check but continue
-              participantState.failedSanityCheck = true;
-              // Don't return - just continue the study
+              participantState.sanityFailures++;
+              
+              // Check if user should be kicked out (failed 2 sanity checks total)
+              if (participantState.sanityFailures >= STUDY_CONFIG.SANITY_CHECK.MAX_FAILURES) {
+                participantState.phase = 'sanity_failed';
+                saveProgress(participantState);
+                submitData(true);
+                showSanityFailed();
+                return;
+              }
             }
           } else {
             // Regular video
@@ -792,7 +952,7 @@
         if (isFailed) {
           if (participantState.phase === 'quiz_failed') {
             finalParticipantId += '_quiz_failed';
-          } else if (participantState.failedSanityCheck) {
+          } else if (participantState.sanityFailures >= STUDY_CONFIG.SANITY_CHECK.MAX_FAILURES) {
             finalParticipantId += '_sanity_failed';
           }
         }
@@ -812,11 +972,12 @@
           sanity_check_results: participantState.sanityCheckResults,
           sanity_checks_passed: participantState.sanityCheckResults.filter(r => r.correct).length,
           sanity_checks_total: participantState.sanityCheckResults.length,
+          sanity_failures: participantState.sanityFailures,
           failed: isFailed,
           failure_reason: isFailed ? participantState.phase : null,
           responses: participantState.responses,
           timestamp: new Date().toISOString(),
-          config_version: 'v3.0'
+          config_version: 'v5.0'
         };
 
         console.log("Submitting payload:", payload);

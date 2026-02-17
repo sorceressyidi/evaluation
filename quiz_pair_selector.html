@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Pair Selector Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .selected-pair {
+      background-color: #dcfce7 !important;
+      border-color: #22c55e !important;
+    }
+    .answer-btn.selected {
+      transform: scale(1.1);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+    }
+    video {
+      max-height: 300px;
+    }
+    .pair-card {
+      transition: all 0.2s ease;
+    }
+    .pair-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto max-w-7xl p-4">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Quiz Pair Selector Tool</h1>
+      <p class="text-gray-600 mb-4">Browse video pairs, select good ones for sanity checks, and set the correct answers.</p>
+      
+      <div class="flex flex-wrap gap-4 items-center">
+        <div class="flex items-center gap-2">
+          <label class="font-medium">Filter by task:</label>
+          <select id="taskFilter" class="border rounded-md px-3 py-2 min-w-[300px]">
+            <option value="">All Tasks</option>
+          </select>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <label class="font-medium">Jump to index:</label>
+          <input type="number" id="jumpToIndex" class="border rounded-md px-3 py-2 w-24" min="0" placeholder="0">
+          <button id="jumpBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Go</button>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <label class="font-medium">Show:</label>
+          <select id="showFilter" class="border rounded-md px-3 py-2">
+            <option value="all">All Pairs</option>
+            <option value="selected">Selected Only</option>
+            <option value="unselected">Unselected Only</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stats Bar -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-wrap gap-6 items-center">
+      <div class="text-lg">
+        <span class="font-bold text-green-600" id="selectedCount">0</span>
+        <span class="text-gray-600">/ 30 pairs selected</span>
+      </div>
+      <div class="text-sm text-gray-500">
+        Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> pairs
+      </div>
+      <div class="flex-1"></div>
+      <button id="exportBtn" class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 font-medium">
+        📋 Export Selected Pairs
+      </button>
+      <button id="clearAllBtn" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
+        Clear All
+      </button>
+    </div>
+    
+    <!-- Loading -->
+    <div id="loading" class="text-center py-20">
+      <div class="text-xl text-gray-600">Loading pairs.json...</div>
+    </div>
+    
+    <!-- Pairs Grid -->
+    <div id="pairsContainer" class="hidden">
+      <div id="pairsGrid" class="space-y-6">
+        <!-- Pairs will be inserted here -->
+      </div>
+      
+      <!-- Pagination -->
+      <div class="flex justify-center gap-4 mt-8 mb-8">
+        <button id="prevPageBtn" class="bg-gray-200 px-6 py-2 rounded-md hover:bg-gray-300 disabled:opacity-50">← Previous</button>
+        <span class="px-4 py-2 text-gray-600">Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+        <button id="nextPageBtn" class="bg-gray-200 px-6 py-2 rounded-md hover:bg-gray-300 disabled:opacity-50">Next →</button>
+      </div>
+    </div>
+    
+    <!-- Export Modal -->
+    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-auto">
+        <div class="p-6">
+          <h2 class="text-2xl font-bold mb-4">Selected Quiz Pairs</h2>
+          <p class="text-gray-600 mb-4">Copy this code and paste it into videos.html to replace the EXTENDED_QUIZ_PAIRS constant:</p>
+          <pre id="exportCode" class="bg-gray-100 p-4 rounded-md overflow-auto text-sm max-h-[50vh]"></pre>
+          <div class="flex gap-4 mt-4">
+            <button id="copyCodeBtn" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Copy to Clipboard</button>
+            <button id="closeModalBtn" class="bg-gray-300 px-6 py-2 rounded-md hover:bg-gray-400">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (async function() {
+      // State
+      let allPairs = [];
+      let filteredPairs = [];
+      let selectedPairs = {}; // { index: { correct_answer: 'left'|'right'|'same', explanation: '' } }
+      let currentPage = 1;
+      const pairsPerPage = 10;
+      
+      // Load from localStorage
+      const savedSelections = localStorage.getItem('quizPairSelections');
+      if (savedSelections) {
+        selectedPairs = JSON.parse(savedSelections);
+      }
+      
+      // Elements
+      const loading = document.getElementById('loading');
+      const pairsContainer = document.getElementById('pairsContainer');
+      const pairsGrid = document.getElementById('pairsGrid');
+      const taskFilter = document.getElementById('taskFilter');
+      const showFilter = document.getElementById('showFilter');
+      const selectedCountEl = document.getElementById('selectedCount');
+      const showingCountEl = document.getElementById('showingCount');
+      const totalCountEl = document.getElementById('totalCount');
+      const prevPageBtn = document.getElementById('prevPageBtn');
+      const nextPageBtn = document.getElementById('nextPageBtn');
+      const currentPageEl = document.getElementById('currentPage');
+      const totalPagesEl = document.getElementById('totalPages');
+      const exportBtn = document.getElementById('exportBtn');
+      const exportModal = document.getElementById('exportModal');
+      const exportCode = document.getElementById('exportCode');
+      const copyCodeBtn = document.getElementById('copyCodeBtn');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      const clearAllBtn = document.getElementById('clearAllBtn');
+      const jumpToIndex = document.getElementById('jumpToIndex');
+      const jumpBtn = document.getElementById('jumpBtn');
+      
+      // Load pairs.json
+      try {
+        const res = await fetch('./videos/pairs.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        allPairs = await res.json();
+        
+        // Extract unique tasks
+        const tasks = new Set();
+        allPairs.forEach(pair => {
+          const task = extractTask(pair.instruction);
+          tasks.add(task);
+        });
+        
+        // Populate task filter
+        Array.from(tasks).sort().forEach(task => {
+          const option = document.createElement('option');
+          option.value = task;
+          option.textContent = task;
+          taskFilter.appendChild(option);
+        });
+        
+        loading.classList.add('hidden');
+        pairsContainer.classList.remove('hidden');
+        totalCountEl.textContent = allPairs.length;
+        
+        applyFilters();
+        updateStats();
+        
+      } catch (err) {
+        loading.innerHTML = `<div class="text-red-600">Error loading pairs.json: ${err.message}</div>`;
+      }
+      
+      function extractTask(instruction) {
+        const match = instruction.match(/^test_(.+?)_[0-9]/);
+        return match ? match[1] : instruction;
+      }
+      
+      function applyFilters() {
+        const taskValue = taskFilter.value;
+        const showValue = showFilter.value;
+        
+        filteredPairs = allPairs.map((pair, index) => ({ pair, index })).filter(({ pair, index }) => {
+          // Task filter
+          if (taskValue && extractTask(pair.instruction) !== taskValue) return false;
+          
+          // Show filter
+          if (showValue === 'selected' && !selectedPairs[index]) return false;
+          if (showValue === 'unselected' && selectedPairs[index]) return false;
+          
+          return true;
+        });
+        
+        currentPage = 1;
+        renderPage();
+      }
+      
+      function renderPage() {
+        const startIdx = (currentPage - 1) * pairsPerPage;
+        const endIdx = startIdx + pairsPerPage;
+        const pagePairs = filteredPairs.slice(startIdx, endIdx);
+        
+        pairsGrid.innerHTML = '';
+        
+        pagePairs.forEach(({ pair, index }) => {
+          const isSelected = !!selectedPairs[index];
+          const selection = selectedPairs[index] || {};
+          
+          const card = document.createElement('div');
+          card.className = `pair-card bg-white rounded-lg shadow-md p-4 border-2 ${isSelected ? 'selected-pair border-green-500' : 'border-transparent'}`;
+          card.innerHTML = `
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <span class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-mono">Index: ${index}</span>
+                <span class="ml-2 text-gray-600">${pair.videoA.source} vs ${pair.videoB.source}</span>
+              </div>
+              <button class="select-btn px-4 py-1 rounded-md font-medium ${isSelected ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'}" data-index="${index}">
+                ${isSelected ? '✕ Remove' : '+ Select'}
+              </button>
+            </div>
+            
+            <div class="text-lg font-medium text-gray-800 mb-3">
+              Task: ${extractTask(pair.instruction)}
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <div class="text-center font-medium text-blue-600 mb-2">Policy A (${pair.videoA.source})</div>
+                <video controls muted class="w-full rounded-md bg-black" src="${pair.videoA.path}"></video>
+              </div>
+              <div>
+                <div class="text-center font-medium text-green-600 mb-2">Policy B (${pair.videoB.source})</div>
+                <video controls muted class="w-full rounded-md bg-black" src="${pair.videoB.path}"></video>
+              </div>
+            </div>
+            
+            <div class="border-t pt-3 ${isSelected ? '' : 'opacity-50'}">
+              <div class="flex items-center gap-4 mb-3">
+                <span class="font-medium">Correct Answer:</span>
+                <button class="answer-btn px-4 py-2 rounded-md ${selection.correct_answer === 'left' ? 'bg-blue-600 text-white selected' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}" data-index="${index}" data-answer="left">
+                  👈 Left is Better
+                </button>
+                <button class="answer-btn px-4 py-2 rounded-md ${selection.correct_answer === 'same' ? 'bg-orange-500 text-white selected' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}" data-index="${index}" data-answer="same">
+                  🤝 Tie
+                </button>
+                <button class="answer-btn px-4 py-2 rounded-md ${selection.correct_answer === 'right' ? 'bg-green-600 text-white selected' : 'bg-green-100 text-green-700 hover:bg-green-200'}" data-index="${index}" data-answer="right">
+                  Right is Better 👉
+                </button>
+              </div>
+              <div>
+                <label class="font-medium">Explanation:</label>
+                <textarea class="explanation-input w-full mt-1 p-2 border rounded-md" data-index="${index}" rows="2" placeholder="e.g., Policy A successfully moves the object while Policy B fails to grasp it...">${selection.explanation || ''}</textarea>
+              </div>
+            </div>
+          `;
+          
+          pairsGrid.appendChild(card);
+        });
+        
+        // Update pagination
+        const totalPages = Math.ceil(filteredPairs.length / pairsPerPage);
+        currentPageEl.textContent = currentPage;
+        totalPagesEl.textContent = totalPages || 1;
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+        showingCountEl.textContent = filteredPairs.length;
+        
+        // Add event listeners
+        document.querySelectorAll('.select-btn').forEach(btn => {
+          btn.addEventListener('click', () => toggleSelection(parseInt(btn.dataset.index)));
+        });
+        
+        document.querySelectorAll('.answer-btn').forEach(btn => {
+          btn.addEventListener('click', () => setAnswer(parseInt(btn.dataset.index), btn.dataset.answer));
+        });
+        
+        document.querySelectorAll('.explanation-input').forEach(input => {
+          input.addEventListener('change', () => setExplanation(parseInt(input.dataset.index), input.value));
+        });
+      }
+      
+      function toggleSelection(index) {
+        if (selectedPairs[index]) {
+          delete selectedPairs[index];
+        } else {
+          selectedPairs[index] = { correct_answer: '', explanation: '' };
+        }
+        saveSelections();
+        updateStats();
+        renderPage();
+      }
+      
+      function setAnswer(index, answer) {
+        if (!selectedPairs[index]) {
+          selectedPairs[index] = { correct_answer: '', explanation: '' };
+        }
+        selectedPairs[index].correct_answer = answer;
+        saveSelections();
+        renderPage();
+      }
+      
+      function setExplanation(index, explanation) {
+        if (!selectedPairs[index]) {
+          selectedPairs[index] = { correct_answer: '', explanation: '' };
+        }
+        selectedPairs[index].explanation = explanation;
+        saveSelections();
+      }
+      
+      function saveSelections() {
+        localStorage.setItem('quizPairSelections', JSON.stringify(selectedPairs));
+      }
+      
+      function updateStats() {
+        selectedCountEl.textContent = Object.keys(selectedPairs).length;
+      }
+      
+      function generateExportCode() {
+        const entries = Object.entries(selectedPairs)
+          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+          .map(([index, data]) => {
+            const pair = allPairs[index];
+            const task = extractTask(pair.instruction);
+            return `        // ${task} (${pair.videoA.source} vs ${pair.videoB.source})
+        ${index}: {
+          correct_answer: '${data.correct_answer || 'TODO'}',
+          explanation: '${(data.explanation || 'TODO: Add explanation').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'
+        }`;
+          });
+        
+        return `      // All quiz pairs pool (${entries.length + 10} pairs total)
+      // First 10 are for initial quiz (paid workers), rest are for sanity checks
+      // These are used for:
+      // - Paid workers: First 10 as initial quiz, remaining used for sanity checks
+      // - Free workers: All used for sanity checks (2 per every 10 videos)
+      // If user fails 2 sanity checks total, they are kicked out
+      const ALL_QUIZ_PAIRS = {
+        // Original 10 quiz pairs (used for initial quiz for paid workers)
+        13: { 
+          correct_answer: 'left', 
+          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\\nPolicy B: The right robot only reaches the can without moving it.' 
+        },
+        25: { 
+          correct_answer: 'same', 
+          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\\nPolicy B: The right robot reaches the can and then moves it to the right of the pot.' 
+        },
+        52: { 
+          correct_answer: 'left', 
+          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\\nPolicy B: The right robot only reaches the can without moving it.' 
+        },
+        638: { 
+          correct_answer: 'right', 
+          explanation: 'Policy A: The left robot reaches the cloth and makes some movements to move it but fails.\\nPolicy B: The right robot reaches the cloth, and then moves it to the bottom left of the table below the yellow pepper.' 
+        },
+        695: { 
+          correct_answer: 'left', 
+          explanation: 'Policy A: The left robot reaches the blue cloth, makes some attempts to finish the task and moves the cloth a bit.\\nPolicy B: The right robot makes no meaningful movement.' 
+        },
+        2544: { 
+          correct_answer: 'left', 
+          explanation: 'Policy A: The left robot reaches the spoon, picks it up and puts it on the yellow cloth.\\nPolicy B: The right robot reaches the spoon, tries to pick it up but fails.' 
+        },
+        4210: { 
+          correct_answer: 'left', 
+          explanation: 'Policy A: The left robot reaches the blue bowl, grasps it and moves it to the upper right side of the table.\\nPolicy B: The right robot only tries to reach the blue fork.' 
+        },
+        4683: { 
+          correct_answer: 'right', 
+          explanation: 'Policy A: The left robot makes no meaningful move.\\nPolicy B: The right robot reaches the cylinder, and moves it to the right of the chess pawn.'
+        },
+        4794: { 
+          correct_answer: 'same', 
+          explanation: 'Policy A: The left robot makes no meaningful move.\\nPolicy B: The right robot makes no meaningful move.' 
+        },
+        8230: { 
+          correct_answer: 'same', 
+          explanation: 'Policy A: The left robot moves closer to the knife but does not pick it up.\\nPolicy B: The right robot moves closer to the knife but does not pick it up.' 
+        },
+        // Additional 30 quiz pairs for sanity checks (selected using this tool)
+${entries.join(',\n')}
+      };
+
+      // First 10 indices are used for initial quiz (paid workers only)
+      const INITIAL_QUIZ_INDICES = [13, 25, 52, 638, 695, 2544, 4210, 4683, 4794, 8230];`;
+      }
+      
+      // Event listeners
+      taskFilter.addEventListener('change', applyFilters);
+      showFilter.addEventListener('change', applyFilters);
+      
+      prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderPage();
+          window.scrollTo(0, 0);
+        }
+      });
+      
+      nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredPairs.length / pairsPerPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderPage();
+          window.scrollTo(0, 0);
+        }
+      });
+      
+      jumpBtn.addEventListener('click', () => {
+        const targetIndex = parseInt(jumpToIndex.value);
+        if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= allPairs.length) {
+          alert('Invalid index');
+          return;
+        }
+        
+        // Reset filters to show all
+        taskFilter.value = '';
+        showFilter.value = 'all';
+        applyFilters();
+        
+        // Find page containing this index
+        const pairPosition = filteredPairs.findIndex(({ index }) => index === targetIndex);
+        if (pairPosition >= 0) {
+          currentPage = Math.floor(pairPosition / pairsPerPage) + 1;
+          renderPage();
+          window.scrollTo(0, 0);
+        } else {
+          alert('Index not found in current filter');
+        }
+      });
+      
+      exportBtn.addEventListener('click', () => {
+        const code = generateExportCode();
+        exportCode.textContent = code;
+        exportModal.classList.remove('hidden');
+      });
+      
+      copyCodeBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(exportCode.textContent);
+        copyCodeBtn.textContent = '✓ Copied!';
+        setTimeout(() => copyCodeBtn.textContent = 'Copy to Clipboard', 2000);
+      });
+      
+      closeModalBtn.addEventListener('click', () => {
+        exportModal.classList.add('hidden');
+      });
+      
+      clearAllBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all selections?')) {
+          selectedPairs = {};
+          saveSelections();
+          updateStats();
+          renderPage();
+        }
+      });
+      
+      // Close modal on outside click
+      exportModal.addEventListener('click', (e) => {
+        if (e.target === exportModal) {
+          exportModal.classList.add('hidden');
+        }
+      });
+      
+    })();
+  </script>
+</body>
+</html>
