@@ -1,164 +1,158 @@
 # Robot Policy Comparison Study
 
-A browser-based human evaluation study for comparing robot manipulation policies. Participants watch side-by-side video clips of robots attempting tasks, describe what each robot did, and choose which performed better.
-
-## Features
-
-- **Dual participant flows**: Paid workers (with qualification quiz) and volunteers (direct entry)
-- **Quality control**: Hidden sanity checks distributed throughout the study (2 per every 10 videos)
-- **Progress persistence**: Participants can leave and resume via localStorage
-- **Quiz pair selector**: Visual tool for selecting and verifying quiz pairs
-- **Multiple ranking algorithms**: Bradley-Terry MLE, EM with latent buckets, Elo, Points-based
-- **Real-time dashboard**: View rankings and statistics as data comes in
+A browser-based human evaluation platform for benchmarking robot manipulation policies through pairwise video comparison. Participants watch side-by-side recordings of robots attempting identical tasks and judge which performed better — enabling large-scale, crowd-sourced policy ranking with rigorous quality control.
 
 ## Repository Layout
 
 ```
 .
-├── index.html              # Landing page - participant ID entry
-├── videos.html             # Main study interface
-├── quiz_pair_selector.html # Visual tool for selecting quiz pairs
-├── videos/                 # Video assets and pairs.json
-│   ├── pairs.json          # Generated video pair configurations
-│   ├── cogact/             # Videos from CogACT policy
-│   ├── octo/               # Videos from Octo policy
-│   ├── pi0/                # Videos from Pi0 policy
-│   ├── robovlm/            # Videos from RoboVLM policy
-│   ├── spatial/            # Videos from Spatial policy
-│   ├── xvla/               # Videos from XVLA policy
+├── index.html               # Landing page — participant ID entry & instructions
+├── videos.html              # Main study interface (side-by-side video comparisons)
+├── quiz_pair_selector.html  # Visual tool for curating quiz & sanity-check pairs
+├── videos/
+│   ├── pairs.json           # Generated pairwise comparison configurations
+│   ├── cogact/              # Videos from the CogACT policy
+│   ├── octo/                # Videos from the Octo policy
+│   ├── pi0/                 # Videos from the Pi0 policy
+│   ├── robovlm/             # Videos from the RoboVLM policy
+│   ├── spatial/             # Videos from the Spatial policy
+│   ├── xvla/                # Videos from the XVLA policy
 │   └── ...
 ├── scripts/
-│   ├── generate.js         # Generates pairs.json from video directories
-│   ├── find_quiz_pairs.js  # Helper to locate quiz pairs after regeneration
-│   └── arrange.sh          # Helper to organize video files
-├── backend/
-│   ├── main.py             # FastAPI backend server
-│   ├── schema.sql          # PostgreSQL database schema
-│   └── README.md           # Backend-specific documentation
-└── README.md               # This file
+│   ├── generate.js          # Generates pairs.json from video directories
+│   ├── find_quiz_pairs.js   # Locates quiz pairs after regeneration
+│   ├── check_videos.js      # Validates video file integrity
+│   └── arrange.sh           # Organises raw video files into policy subdirectories
+└── backend/
+    ├── main.py              # FastAPI server — data collection & live dashboard
+    ├── schema.sql           # PostgreSQL schema
+    └── README.md            # Backend setup & API reference
 ```
 
 ## Quick Start
 
-### 1. Organize Videos
+### 1. Organise Videos
 
-Place your policy videos in subdirectories under `videos/`:
+Place `.mp4` files for each policy under a named subdirectory inside `videos/`. Files that share the same name across directories are treated as competing attempts at the same task and will be automatically paired.
 
 ```
 videos/
 ├── cogact/
-│   ├── test_Move_the_can_to_the_right_of_the_pot_0.mp4
+│   ├── test_move the blue bowl to the upper right_0.mp4
 │   └── ...
 ├── pi0/
 │   └── ...
-├── xvla/
-│   └── ...
-└── output/                 # Excluded from pairing (reference only)
+└── xvla/
+    └── ...
 ```
 
 ### 2. Generate Video Pairs
 
 ```bash
-cd scripts
-node generate.js
+node scripts/generate.js
 ```
 
-This creates `videos/pairs.json` with all pairwise comparisons.
+Scans all policy directories and writes every valid pairwise comparison to `videos/pairs.json`. To cap the number of pairs per task, pass a limit as the third argument inside the script.
 
-### 3. Configure Quiz Pairs
+### 3. Configure Quiz & Sanity-Check Pairs
 
-Edit `videos.html` and update `ALL_QUIZ_PAIRS` with indices from your `pairs.json`:
+Open `quiz_pair_selector.html` in a browser to visually inspect video pairs and identify ones with a clear, unambiguous correct answer. Then update `videos.html` with your selections:
 
 ```javascript
+// Pool of 40 pairs with known correct answers
 const ALL_QUIZ_PAIRS = {
-  13: { correct_answer: 'left', explanation: '...' },
-  25: { correct_answer: 'same', explanation: '...' },
-  // ... 40 total pairs with known correct answers
+  13:   { correct_answer: 'left',  explanation: 'Robot A successfully grasped...' },
+  25:   { correct_answer: 'same',  explanation: 'Both robots failed to...' },
+  // ...
 };
 
-// First 10 are used for initial quiz (paid workers only)
+// First 10 indices are used as the initial qualification quiz (paid workers only)
 const INITIAL_QUIZ_INDICES = [13, 25, 52, 638, 695, 2544, 4210, 4683, 4790, 8230];
 ```
 
-Use `quiz_pair_selector.html` to visually select and verify quiz pairs.
-
-### 4. Start Local Server
+### 4. Run the Frontend
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Open `http://localhost:8080/index.html` in your browser.
+Open `http://localhost:8080/index.html`.
 
-### 5. Set Up Backend
+### 5. Set Up the Backend
 
-```bash
-git submodule update --init --recursive
-```
+See [backend/README.md](backend/README.md) for database setup, server configuration, and deployment instructions.
 
-See [backend/README.md](backend/README.md) for database setup and deployment instructions.
+---
 
 ## Study Flow
 
-### For Paid Workers (Amazon MTurk)
+### Paid Workers (Amazon MTurk)
+
 ```
-Entry → Qualification Quiz (10 questions, 80% to pass)
-  ├─ Fail → Study ends, no payment
-  └─ Pass → Main Study (up to 150 videos)
-            └─ Hidden sanity checks: 2 per every 10 videos
-            └─ Fail 2 sanity checks → Kicked out
-            └─ Complete → Completion code for payment
+Entry
+  └── Qualification Quiz  (10 questions — 80% required to pass)
+        ├── Fail → Study ends, no completion code issued
+        └── Pass → Main Study  (up to 150 video comparisons)
+                    ├── Hidden sanity checks injected every 10 videos (2 per batch)
+                    ├── Fail ≥ 2 sanity checks → Removed from study
+                    └── Complete → Completion code issued for payment
 ```
 
-### For Volunteers (Free Workers)
+### Volunteers (Free Workers)
+
 ```
-Entry → Main Study (up to 150 videos)
-        └─ Hidden sanity checks: 2 per every 10 videos
-        └─ Fail 2 sanity checks → Kicked out
-        └─ Complete → Completion code
+Entry
+  └── Main Study  (up to 150 video comparisons)
+        ├── Hidden sanity checks injected every 10 videos (2 per batch)
+        ├── Fail ≥ 2 sanity checks → Removed from study
+        └── Complete → Completion code issued
 ```
+
+Progress is saved to `localStorage`, so participants can close and resume across sessions.
+
+---
 
 ## Configuration
 
-All configuration is in `videos.html`:
+All study parameters are defined at the top of `videos.html`:
 
 ```javascript
 const STUDY_CONFIG = {
-  MAX_MAIN_STUDY_VIDEOS: 150,    // Total videos in main study
-  MIN_VIDEOS_TO_FINISH: 30,      // Minimum before "Finish Early" appears
-  QUIZ_PASS_THRESHOLD: 0.8,      // 80% correct to pass initial quiz
-  NUM_INITIAL_QUIZ: 10,          // Quiz questions for paid workers
-  
+  MAX_MAIN_STUDY_VIDEOS: 150,   // Total comparisons in the main study
+  MIN_VIDEOS_TO_FINISH: 30,     // Minimum before "Finish Early" option appears
+  QUIZ_PASS_THRESHOLD: 0.8,     // Required accuracy on the initial quiz
+  NUM_INITIAL_QUIZ: 10,         // Number of initial quiz questions (paid only)
+
   SANITY_CHECK: {
-    CHECKS_PER_BATCH: 2,         // 2 sanity checks per batch
-    BATCH_SIZE: 10,              // Every 10 videos
-    MAX_FAILURES: 2              // Kick out after 2 wrong answers
+    CHECKS_PER_BATCH: 2,        // Sanity checks injected per batch
+    BATCH_SIZE: 10,             // Videos per batch
+    MAX_FAILURES: 2             // Failures allowed before removal
   }
 };
 ```
 
-## Quiz Pair Pool
+### Quiz Pair Allocation
 
-The system uses a pool of 40 quiz pairs (`ALL_QUIZ_PAIRS`):
+| Worker type | Initial quiz          | Sanity-check pool     |
+|-------------|-----------------------|-----------------------|
+| Paid        | First 10 pairs        | Remaining 30 pairs    |
+| Free        | None                  | All 40 pairs          |
 
-| Worker Type | Initial Quiz | Sanity Check Pool |
-|-------------|--------------|-------------------|
-| Paid        | First 10 pairs (INITIAL_QUIZ_INDICES) | Remaining 30 pairs |
-| Free        | None | All 40 pairs |
-
-Sanity checks are randomly distributed: 2 checks randomly placed within each batch of 10 videos.
+---
 
 ## Adding a New Policy
 
-1. **Add videos**: Create `videos/newpolicy/` with `.mp4` files named by task
-2. **Update generate.js**: Add the new policy directory
-3. **Regenerate pairs**: Run `node scripts/generate.js`
-4. **Update quiz config**: Use `quiz_pair_selector.html` to find and verify new quiz pairs
-5. **Test locally**: Verify videos load and comparisons work
+1. **Add videos** — create `videos/<policyname>/` with `.mp4` files following the existing naming convention.
+2. **Regenerate pairs** — run `node scripts/generate.js`.
+3. **Inspect new pairs** — use `quiz_pair_selector.html` to find suitable quiz candidates.
+4. **Update quiz config** — add verified entries to `ALL_QUIZ_PAIRS` in `videos.html`.
+5. **Test locally** — confirm videos load and comparisons render correctly before deploying.
+
+---
 
 ## Data Format
 
-### Response Payload (v5.0)
+### Submission Payload (v5.0)
 
 ```json
 {
@@ -170,19 +164,18 @@ Sanity checks are randomly distributed: 2 checks randomly placed within each bat
   "quiz_score": 8,
   "quiz_total": 10,
   "sanity_check_results": [
-    {"index": 100, "correct": true, "position": 5, "userAnswer": "left", "correctAnswer": "left"},
-    {"index": 200, "correct": false, "position": 15, "userAnswer": "left", "correctAnswer": "right"}
+    { "index": 100, "correct": true,  "position": 5,  "userAnswer": "left",  "correctAnswer": "left"  },
+    { "index": 200, "correct": false, "position": 15, "userAnswer": "left",  "correctAnswer": "right" }
   ],
   "sanity_checks_passed": 5,
   "sanity_checks_total": 6,
-  "sanity_failures": 1,
   "failed": false,
   "failure_reason": null,
   "responses": [
     {
       "answer": "left_42",
-      "description_A": "Robot grasped the cup successfully",
-      "description_B": "Robot missed the cup entirely",
+      "description_A": "Robot grasped the cup and placed it in the target zone.",
+      "description_B": "Robot approached but missed the cup entirely.",
       "type": "regular"
     }
   ],
@@ -192,11 +185,16 @@ Sanity checks are randomly distributed: 2 checks randomly placed within each bat
 ```
 
 ### Response Types
-- `"quiz"`: Initial qualification questions (paid workers only, with feedback)
-- `"sanity_check"`: Hidden quality control questions (no feedback shown)
-- `"regular"`: Normal comparison questions (used for ranking)
+
+| Type           | Description                                                       |
+|----------------|-------------------------------------------------------------------|
+| `regular`      | Normal pairwise comparison — used for policy ranking              |
+| `quiz`         | Initial qualification question (paid workers only, with feedback) |
+| `sanity_check` | Hidden quality-control question (no feedback shown to participant) |
 
 ### Failure Reasons
-- `"quiz_failed"`: Did not pass the initial quiz (< 80% correct)
-- `"sanity_failed"`: Failed 2 or more sanity checks during main study
 
+| Reason          | Condition                                           |
+|-----------------|-----------------------------------------------------|
+| `quiz_failed`   | Scored below 80% on the initial qualification quiz  |
+| `sanity_failed` | Failed 2 or more sanity checks during the main study |
