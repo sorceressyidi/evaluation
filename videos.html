@@ -212,12 +212,18 @@
     <div id="quiz-failed-container" class="hidden text-center mt-10 p-8 bg-white rounded-lg shadow-xl">
       <h2 class="text-3xl font-bold text-red-600 mb-4">Quiz Failed</h2>
       <p class="text-lg text-gray-700 mb-6">Unfortunately, you did not pass the initial qualification quiz. Thank you for your time.</p>
+      <p class="text-lg text-gray-700">Your completion code is:</p>
+      <p class="text-2xl font-mono bg-gray-100 p-3 my-3 inline-block rounded-md border border-gray-300" id="quizFailedCode"></p>
+      <br>
       <button id="returnHomeButton" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-md hover:bg-blue-700 transition-colors">Return to Home</button>
     </div>
 
     <div id="sanity-failed-container" class="hidden text-center mt-10 p-8 bg-white rounded-lg shadow-xl">
       <h2 class="text-3xl font-bold text-red-600 mb-4">Study Terminated</h2>
       <p class="text-lg text-gray-700 mb-6">Thank you for your participation. The study has been concluded.</p>
+      <p class="text-lg text-gray-700">Your completion code is:</p>
+      <p class="text-2xl font-mono bg-gray-100 p-3 my-3 inline-block rounded-md border border-gray-300" id="sanityFailedCode"></p>
+      <br>
       <button id="returnHome2Button" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-md hover:bg-blue-700 transition-colors">Return to Home</button>
     </div>
 
@@ -279,9 +285,9 @@
       // If user fails 2 sanity checks total, they are kicked out
       const ALL_QUIZ_PAIRS = {
         // Original 10 quiz pairs (used for initial quiz for paid workers)
-        13: { 
+        14: {  
           correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot only reaches the can without moving it.' 
+          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot only reaches the can and tries to move it.' 
         },
         25: { 
           correct_answer: 'same', 
@@ -299,9 +305,9 @@
           correct_answer: 'left', 
           explanation: 'Policy A: The left robot reaches the cloth, makes some attempts to finish the task and moves the cloth a bit.\nPolicy B: The right robot makes no meaningful movement.' 
         },
-        2544: { 
+        2548: {
           correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the spoon, picks it up and puts it on the yellow cloth.\nPolicy B: The right robot reaches the spoon, tries to pick it up but fails.' 
+          explanation: 'Policy A: The left robot reaches the spoon, picks it up and puts it on the yellow cloth.\nPolicy B: The right robot reaches the spoon and tries to pick it up.' 
         },
         4210: { 
           correct_answer: 'left', 
@@ -313,9 +319,9 @@
         },
         4790: { 
           correct_answer: 'right', 
-          explanation: 'Policy A: The left robot makes no meaningful move. \n Policy B: The right robot moves the cylinder to the right side of the chess pawn. \n' 
+          explanation: 'Policy A: The left robot only tries a bit to reach the cylinder. \n Policy B: The right robot moves the cylinder to the right side of the chess pawn. \n' 
         },
-        8230: { 
+        8231: {
           correct_answer: 'same', 
           explanation: 'Policy A: The left robot moves closer to the knife but does not pick it up.\nPolicy B: The right robot moves closer to the knife but does not pick it up.' 
         },
@@ -344,17 +350,17 @@
           correct_answer: 'left',
           explanation: 'Policy A: The left robot reaches the knife, picks it up and puts it a little down between the pot and the pepper\nPolicy B: The right robot reaches the knife and tries to pick it up.'
         },
-        900: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot reaches the pot and only tries to pick it up.\nPolicy B: The right robot reaches the pot, picks it up and puts it on the towel.'
+        931: {
+          correct_answer: 'left',
+          explanation: 'Policy A: The left robot reaches the pot, picks it up and puts it on the towel.\nPolicy B: The right robot reaches the pot and tries to pick it up.'
         },
         // Pick up milk bottle (cogact vs spatial)
-        1100: {
+        1065: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot reaches and moves it blue cloth.\nPolicy B: The right robot reaches the picks up the milk bottle.'
+          explanation: 'Policy A: The left robot reaches and moves the blue cloth.\nPolicy B: The right robot reaches and picks up the milk bottle.'
         },
         // Pick up the salmon and put it in the pot (cogact vs robovlm)
-        1300: {
+        1323: {
           correct_answer: 'left',
           explanation: 'Policy A: The left robot reaches the salmon, picks it up and puts inside the pot.\nPolicy B: The right robot only reaches the pot.'
         },
@@ -370,7 +376,7 @@
         // Put the metal pan on the blue cloth (cogact vs spatial)
         2700: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the pan, picks it up and puts it on the blue cloth\nPolicy B: The right robot makes no meaningful movement.'
+          explanation: 'Policy A: The left robot reaches the pan and tries to pick it up\nPolicy B: The right robot makes no meaningful movement.'
         },
         // Put the metal pan on the blue cloth_test0 (pi0 vs spatial)
         2800: {
@@ -388,9 +394,9 @@
           explanation: 'Policy A: The left robot reaches the stuffed dog, picks it up and puts beside the pot.\nPolicy B: The right robot only reaches the stuffed dog and picks it up.'
         },
         // Put the stuffed dog inside the pot_test0 (cogact vs robovlm)
-        3301: {
+        3304: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the stuffed dog.\nPolicy B: The right robot reaches the stuffed dog, picks it up and puts it inside the pot.'
+          explanation: 'Policy A: The left robot does nothing meaningful.\nPolicy B: The right robot reaches the stuffed dog, and tries to pick it up.'
         },
         // Put the stuffed dog inside the pot_test0 (octo vs pi0)
         3331: {
@@ -403,9 +409,9 @@
           explanation: 'Policy A: The left robot only reaches the stuffed dog.\nPolicy B: The right robot reaches the stuffed dog, picks it up and puts it inside the pot.'
         },
         // move blue cloth from center to right bottom corner (cogact vs spatial)
-        3600: {
-          correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches cloth and moves it a bit to the right bottom corner\nPolicy B: The right robot only reaches the cloth.'
+        3106: { 
+          correct_answer: 'right',
+          explanation: 'Policy A: The left robot reaches the bowl\nPolicy B: The right robot picks up the bowl and moves it to the upper right.'
         },
         // move the blue brush to the upper left corner of the table (pi0 vs xvla)
         4300: {
@@ -443,17 +449,17 @@
           explanation: 'Policy A: The left robot only reaches the banana and tries to pick it up.\nPolicy B: The right robot reaches the banana, picks it up and puts it inside the pot.'
         },
         // put blue cube to left corner of the table (cogact vs robovlm)
-        7517: {
+        7643: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the blue cube and picks it up.\nPolicy B: The right robot makes no meaningful movement.'
+          explanation: 'Policy A: The left robot puts brown toy at the bottom center of the table.\nPolicy B: The right robot makes no meaningful movement.'
         },
         // put knife on towel (pi0 vs spatial)
-        8407: {
+        8422: {
           correct_answer: 'left',
           explanation: 'Policy A: The left robot reaches the knife, picks it up and puts it on the green cloth.\nPolicy B: The right robot only reaches the knife and tries to pick it up.'
         },
         // put knife on towel (spatial vs xvla)
-        8408: {
+        8429: {
           correct_answer: 'right',
           explanation: 'Policy A: The left robot only reaches the knife.\nPolicy B: The right robot reaches the knife, picks it up and puts it on the green cloth.'
         },
@@ -470,7 +476,7 @@
       };
 
       // First 10 indices are used for initial quiz (paid workers only)
-      const INITIAL_QUIZ_INDICES = [13, 25, 52, 638, 695, 2544, 4210, 4683, 4790, 8230];
+      const INITIAL_QUIZ_INDICES = [14, 25, 52, 638, 695, 2548, 4210, 4683, 4790, 8231];
 
       // ========== END CONFIGURATION ==========
 
@@ -887,11 +893,13 @@
 
       function showQuizFailed() {
         studyContainer.classList.add('hidden');
+        document.getElementById('quizFailedCode').textContent = participantState.failedCompletionCode || '';
         quizFailedContainer.classList.remove('hidden');
       }
 
       function showSanityFailed() {
         studyContainer.classList.add('hidden');
+        document.getElementById('sanityFailedCode').textContent = participantState.failedCompletionCode || '';
         sanityFailedContainer.classList.remove('hidden');
       }
 
@@ -1032,7 +1040,11 @@
           }
         }
         
-        const code = isFailed ? 'INCOMPLETE' : generateCompletionCode();
+        const code = generateCompletionCode();
+        if (isFailed) {
+          participantState.failedCompletionCode = code;
+          saveProgress(participantState);
+        }
         const currentSessionDuration = Date.now() - participantState.sessionStartTime;
         const totalTimeMs = participantState.accumulatedTimeMs + currentSessionDuration;
 
@@ -1052,7 +1064,7 @@
           failure_reason: isFailed ? participantState.phase : null,
           responses: participantState.responses,
           timestamp: new Date().toISOString(),
-          config_version: 'v5.0'
+          config_version: 'v1.0-official'
         };
 
         console.log("Submitting payload:", payload);
