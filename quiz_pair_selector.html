@@ -7,32 +7,57 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
+    body { font-family: 'Inter', sans-serif; }
+
+    /* ── Header accent ─────────────────────────────── */
+    .header-card {
+      border-top: 4px solid #3b82f6;
     }
+    .header-card h1 {
+      background: linear-gradient(135deg, #1e40af, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Stats bar ─────────────────────────────────── */
+    .stats-bar {
+      border-left: 4px solid #10b981;
+    }
+
+    /* ── Pair cards ────────────────────────────────── */
     .selected-pair {
-      background-color: #dcfce7 !important;
+      background-color: #f0fdf4 !important;
       border-color: #22c55e !important;
     }
-    .answer-btn.selected {
-      transform: scale(1.1);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-    }
-    video {
-      max-height: 300px;
-    }
     .pair-card {
-      transition: all 0.2s ease;
+      transition: box-shadow 0.2s ease, transform 0.15s ease;
     }
     .pair-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    /* ── Answer buttons ────────────────────────────── */
+    .answer-btn.selected {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+    }
+
+    /* ── Videos ────────────────────────────────────── */
+    video { max-height: 300px; border-radius: 6px; }
+
+    /* ── Pagination buttons ────────────────────────── */
+    #prevPageBtn, #nextPageBtn {
+      transition: background 0.15s ease;
+      font-weight: 500;
     }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <div class="container mx-auto max-w-7xl p-4">
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="header-card bg-white rounded-lg shadow-md p-6 mb-6">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">Quiz Pair Selector Tool</h1>
       <p class="text-gray-600 mb-4">Browse video pairs, select good ones for sanity checks, and set the correct answers.</p>
       
@@ -62,7 +87,7 @@
     </div>
     
     <!-- Stats Bar -->
-    <div class="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-wrap gap-6 items-center">
+    <div class="stats-bar bg-white rounded-lg shadow-md p-4 mb-6 flex flex-wrap gap-6 items-center">
       <div class="text-lg">
         <span class="font-bold text-green-600" id="selectedCount">0</span>
         <span class="text-gray-600">/ 30 pairs selected</span>

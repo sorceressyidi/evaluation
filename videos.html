@@ -5,254 +5,378 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Robot Policy Comparison Study</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --blue:         #2563eb;
+      --blue-light:   #dbeafe;
+      --blue-dark:    #1d4ed8;
+      --green:        #16a34a;
+      --green-light:  #dcfce7;
+      --green-dark:   #15803d;
+      --orange:       #ea580c;
+      --orange-light: #ffedd5;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
+      background: linear-gradient(145deg, #f0f4ff 0%, #f8fafc 55%, #f0fdf4 100%);
+      min-height: 100vh;
+      color: #1e293b;
     }
-    .rating-btn.selected {
-      background-color: #2563EB;
-      color: white;
-      border-color: #1D4ED8;
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 6px 20px rgba(0,0,0,0.06);
     }
+
+    /* ── Video column accent ─────────────────────────────── */
+    .video-col-a { border-top: 3px solid var(--blue); }
+    .video-col-b { border-top: 3px solid var(--green); }
+
+    /* ── Policy headers ──────────────────────────────────── */
+    .policy-a-header {
+      background: var(--blue-light);
+      padding: 7px 12px;
+      border-radius: 8px;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .policy-b-header {
+      background: var(--green-light);
+      padding: 7px 12px;
+      border-radius: 8px;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* ── Rating buttons ──────────────────────────────────── */
+    .rating-btn {
+      font-size: 15px;
+      font-weight: 600;
+      padding: 13px 22px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      min-width: 155px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .rating-btn.left {
+      background: var(--blue-light);
+      color: #1e40af;
+      border-color: #bfdbfe;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.10);
+    }
+    .rating-btn.tie {
+      background: var(--orange-light);
+      color: #9a3412;
+      border-color: #fed7aa;
+      box-shadow: 0 2px 8px rgba(234,88,12,0.10);
+    }
+    .rating-btn.right {
+      background: var(--green-light);
+      color: #166534;
+      border-color: #bbf7d0;
+      box-shadow: 0 2px 8px rgba(22,163,74,0.10);
+    }
+    .rating-btn.left:hover:not(:disabled) {
+      background: #bfdbfe;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37,99,235,0.18);
+    }
+    .rating-btn.tie:hover:not(:disabled) {
+      background: #fed7aa;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(234,88,12,0.18);
+    }
+    .rating-btn.right:hover:not(:disabled) {
+      background: #bbf7d0;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(22,163,74,0.18);
+    }
+    .rating-btn.left.selected {
+      background: var(--blue)  !important;
+      color: white             !important;
+      border-color: var(--blue-dark) !important;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.38) !important;
+    }
+    .rating-btn.tie.selected {
+      background: var(--orange) !important;
+      color: white              !important;
+      border-color: #c2410c    !important;
+      box-shadow: 0 4px 14px rgba(234,88,12,0.38) !important;
+    }
+    .rating-btn.right.selected {
+      background: var(--green)   !important;
+      color: white               !important;
+      border-color: var(--green-dark) !important;
+      box-shadow: 0 4px 14px rgba(22,163,74,0.38) !important;
+    }
+    .rating-btn:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .rating-btn:active:not(:disabled) { transform: translateY(0) !important; }
+
+    /* ── Textarea ────────────────────────────────────────── */
+    textarea {
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      resize: vertical;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--blue) !important;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    textarea:disabled {
+      background: #f8fafc;
+      cursor: not-allowed;
+      color: #94a3b8;
+    }
+
+    /* ── Evaluation fieldset lock ────────────────────────── */
+    #evaluationFieldset.disabled {
+      opacity: 0.38;
+      pointer-events: none;
+    }
+
+    /* ── Submit descriptions button ──────────────────────── */
+    #submitDescriptionsBtn:not(:disabled) {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      box-shadow: 0 4px 14px rgba(79,70,229,0.30);
+    }
+    #submitDescriptionsBtn:not(:disabled):hover {
+      box-shadow: 0 6px 20px rgba(79,70,229,0.40);
+      transform: translateY(-1px);
+    }
+    #submitDescriptionsBtn { transition: all 0.2s ease; }
+
+    /* ── Next button ─────────────────────────────────────── */
+    #nextButton:not(:disabled) {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+    }
+    #nextButton:not(:disabled):hover {
+      box-shadow: 0 6px 20px rgba(37,99,235,0.45);
+      transform: translateY(-1px);
+    }
+    #nextButton { transition: all 0.2s ease; }
+
+    /* ── Finish early button ─────────────────────────────── */
+    #finishEarlyButton {
+      background: #64748b;
+      transition: background 0.2s ease;
+    }
+    #finishEarlyButton:hover { background: #475569; }
+    #finishEarlyButton.hidden { display: none; }
+
+    /* ── Task instruction banner ─────────────────────────── */
+    .task-banner {
+      background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+      border-left: 4px solid #3b82f6;
+      border-radius: 0 10px 10px 0;
+      padding: 10px 16px;
+    }
+
+    /* ── Status screens (completion / failed) ────────────── */
+    .status-screen {
+      text-align: center;
+      margin-top: 4rem;
+      padding: 3rem 2.5rem;
+    }
+    .status-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .completion-code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.75rem 1.75rem;
+      font-size: 1.6rem;
+      letter-spacing: 0.12em;
+      display: inline-block;
+    }
+
+    /* ── Divider inside form ─────────────────────────────── */
+    .section-divider {
+      height: 1px;
+      background: #f1f5f9;
+      margin: 0.25rem -1.25rem 1.25rem;
+    }
+
+    /* ── Modal ───────────────────────────────────────────── */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex; justify-content: center; align-items: center;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
       z-index: 1000;
     }
     .modal-content {
-      background-color: white;
-      padding: 2rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      max-width: 500px;
+      background: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      max-width: 480px;
+      width: 90%;
       text-align: center;
     }
-    .rating-btn.left {
-      font-size: 18px;
-      font-weight: 600;
-      padding: 14px 24px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      min-width: 160px;
-      background-color: #e3f2fd;
-      color: #1565c0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      user-select: none;
-    }
-    .rating-btn.tie {
-      font-size: 18px;
-      font-weight: 600;
-      padding: 14px 24px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      min-width: 160px;
-      background-color: #fff3e0;
-      color: #ef6c00;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      user-select: none;
-    }
-    .rating-btn.right {
-      font-size: 18px;
-      font-weight: 600;
-      padding: 14px 24px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      min-width: 160px;
-      background-color: #e8f5e9;
-      color: #2e7d32;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      user-select: none;
-    }
-    .rating-btn.left:hover:not(:disabled) {
-      background-color: #bbdefb;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-      transform: translateY(-2px);
-    }
-    .rating-btn.tie:hover:not(:disabled) {
-      background-color: #ffe0b2;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-      transform: translateY(-2px);
-    }
-    .rating-btn.right:hover:not(:disabled) {
-      background-color: #c8e6c9;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-      transform: translateY(-2px);
-    }
-    .rating-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .rating-btn.left:active,
-    .rating-btn.tie:active,
-    .rating-btn.right:active {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transform: translateY(0);
-    }
-    .policy-a-header {
-      background: #e3f2fd;
-      padding: 8px;
-      border-radius: 8px;
-      color: #1565c0;
-      border: 1px solid #90caf9;
-      margin-bottom: 0.5rem;
-    }
-    .policy-b-header {
-      background: #e8f5e9;
-      padding: 8px;
-      border-radius: 8px;
-      color: #2e7d32;
-      border: 1px solid #a5d6a7;
-      margin-bottom: 0.5rem;
-    }
-    .rating-btn.left.selected {
-      background-color: #1976d2 !important;
-      color: white !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2) inset;
-    }
-    .rating-btn.tie.selected {
-      background-color: #f57c00 !important;
-      color: white !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2) inset;
-    }
-    .rating-btn.right.selected {
-      background-color: #388e3c !important;
-      color: white !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2) inset;
-    }
-    textarea {
-        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    textarea:disabled {
-        background-color: #f3f4f6;
-        cursor: not-allowed;
-    }
-    #evaluationFieldset.disabled {
-        opacity: 0.5;
-        pointer-events: none;
-    }
-    #feedback-explanation {
-        white-space: pre-line;
-    }
-    #finishEarlyButton.hidden {
-      display: none;
-    }
+
+    /* ── Feedback explanation text ───────────────────────── */
+    #feedback-explanation { white-space: pre-line; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body>
 
-  <div class="container mx-auto max-w-5xl p-4 md:p-8">
+  <div class="container mx-auto max-w-5xl px-4 py-6 md:py-10">
+
+    <!-- ── Main study container ───────────────────────────── -->
     <div id="study-container" class="hidden">
-      <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-2" id="main-header">Which policy is better?</h1>
-      <p id="instruction" class="text-center text-lg text-gray-700 mb-4"></p>
-      <p id="progress" class="text-center text-gray-500 mb-6 font-mono"></p>
 
-      <div class="video-container grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        <div class="video-column bg-white p-3 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold text-center policy-a-header">
+      <!-- Header row -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h1 class="text-2xl md:text-3xl font-bold text-slate-900" id="main-header">Which policy is better?</h1>
+        <span id="progress" class="text-sm font-semibold text-slate-500 font-mono bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100"></span>
+      </div>
+
+      <!-- Task instruction -->
+      <div class="task-banner mb-5">
+        <p id="instruction" class="text-slate-700 text-sm font-medium"></p>
+      </div>
+
+      <!-- Video cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+        <div class="card video-col-a p-4">
+          <h2 class="text-center policy-a-header">
             Policy A <span class="sr-only" id="sourceLeft" aria-hidden="true"></span>
           </h2>
-          <video id="videoLeft" class="w-full rounded-md bg-black" controls muted playsinline></video>
+          <video id="videoLeft" class="w-full rounded-lg bg-black" controls muted playsinline></video>
           <div class="mt-3">
-              <label for="descriptionLeft" class="block text-sm font-medium text-gray-700 mb-1">Describe the robot's attempt to complete the task:</label>
-              <textarea id="descriptionLeft" name="descriptionLeft" rows="4" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="e.g., The robot reaches to the cup, picks it up and..."></textarea>
+            <label for="descriptionLeft" class="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Describe the robot's attempt:</label>
+            <textarea id="descriptionLeft" name="descriptionLeft" rows="3"
+              class="w-full p-2.5 text-sm border border-slate-200 rounded-lg"
+              placeholder="e.g., The robot reaches for the cup, picks it up and…"></textarea>
           </div>
         </div>
-        <div class="video-column bg-white p-3 rounded-lg shadow-md">
-          <h2 class="text-xl font-semibold text-center policy-b-header">
+        <div class="card video-col-b p-4">
+          <h2 class="text-center policy-b-header">
             Policy B <span class="sr-only" id="sourceRight" aria-hidden="true"></span>
           </h2>
-          <video id="videoRight" class="w-full rounded-md bg-black" controls muted playsinline></video>
+          <video id="videoRight" class="w-full rounded-lg bg-black" controls muted playsinline></video>
           <div class="mt-3">
-              <label for="descriptionRight" class="block text-sm font-medium text-gray-700 mb-1">Describe the robot's attempt to complete the task:</label>
-              <textarea id="descriptionRight" name="descriptionRight" rows="4" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="e.g., The robot made no meaningful move..."></textarea>
+            <label for="descriptionRight" class="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Describe the robot's attempt:</label>
+            <textarea id="descriptionRight" name="descriptionRight" rows="3"
+              class="w-full p-2.5 text-sm border border-slate-200 rounded-lg"
+              placeholder="e.g., The robot made no meaningful movement…"></textarea>
           </div>
         </div>
       </div>
 
-      <form id="responseForm" class="bg-white p-4 rounded-lg shadow-md">
-        <div id="descriptionSubmitContainer" class="text-center mb-4">
-            <button type="button" id="submitDescriptionsBtn" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-md hover:bg-indigo-700 disabled:bg-gray-400">Submit Descriptions</button>
-            <p class="text-xs text-gray-500 mt-1">Please provide descriptions for both videos to continue.</p>
+      <!-- Evaluation form -->
+      <form id="responseForm" class="card p-5">
+
+        <!-- Step 1: submit descriptions -->
+        <div id="descriptionSubmitContainer" class="text-center mb-3">
+          <button type="button" id="submitDescriptionsBtn"
+            class="text-white font-bold py-2.5 px-8 rounded-lg disabled:bg-slate-300 disabled:cursor-not-allowed">
+            Submit Descriptions
+          </button>
+          <p class="text-xs text-slate-400 mt-2">Describe both videos above before continuing.</p>
         </div>
+
+        <!-- Step 2: rating (locked until descriptions submitted) -->
         <fieldset id="evaluationFieldset">
-          <legend class="text-lg font-semibold text-center mb-3">Your evaluation:</legend>
-          <div class="flex flex-wrap justify-center gap-3 mb-4" id="ratingButtonsContainer">
+          <div class="section-divider"></div>
+          <legend class="block text-xs font-semibold text-slate-400 uppercase tracking-wide text-center mb-4">Your evaluation</legend>
+          <div class="flex flex-wrap justify-center gap-3 mb-2" id="ratingButtonsContainer">
             <button type="button" class="rating-btn left" data-value="left">👈 Left is Better</button>
-            <button type="button" class="rating-btn tie" data-value="same">🤝 Tie</button>
+            <button type="button" class="rating-btn tie"  data-value="same">🤝 Tie</button>
             <button type="button" class="rating-btn right" data-value="right">Right is Better 👉</button>
           </div>
-          <div class="text-center text-sm text-gray-600 -mt-2 mb-4">(equally good or equally bad)</div>
+          <p class="text-center text-xs text-slate-400 mb-5">equally good or equally bad counts as a tie</p>
           <div class="text-center">
-            <button type="submit" id="nextButton" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-md hover:bg-blue-700 disabled:bg-gray-400" disabled>Next</button>
+            <button type="submit" id="nextButton"
+              class="text-white font-bold py-2.5 px-10 rounded-lg disabled:bg-slate-300 disabled:cursor-not-allowed" disabled>
+              Next →
+            </button>
           </div>
           <div id="finishEarlyContainer" class="text-center mt-4 hidden">
-            <button type="button" id="finishEarlyButton" class="bg-red-500 text-white font-bold py-2 px-6 rounded-md hover:bg-red-600">
+            <button type="button" id="finishEarlyButton"
+              class="text-white font-semibold py-2 px-6 rounded-lg text-sm">
               Finish Study Now
             </button>
-            <p class="text-sm text-gray-500 mt-1 italic">You may finish at any time and submit your current progress.</p>
+            <p class="text-xs text-slate-400 mt-1">You may stop and submit your progress at any time.</p>
           </div>
         </fieldset>
       </form>
-      <div class="text-center mt-4">
-        <p class="text-sm text-gray-500 italic">Please watch both videos before making a selection.</p>
-      </div>
+
+      <p class="text-center text-xs text-slate-400 mt-3 italic">Please watch both videos before making a selection.</p>
     </div>
 
-    <div id="quiz-failed-container" class="hidden text-center mt-10 p-8 bg-white rounded-lg shadow-xl">
-      <h2 class="text-3xl font-bold text-red-600 mb-4">Quiz Failed</h2>
-      <p class="text-lg text-gray-700 mb-6">Unfortunately, you did not pass the initial qualification quiz. Thank you for your time.</p>
-      <p class="text-lg text-gray-700">Your completion code is:</p>
-      <p class="text-2xl font-mono bg-gray-100 p-3 my-3 inline-block rounded-md border border-gray-300" id="quizFailedCode"></p>
-      <br>
-      <button id="returnHomeButton" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-md hover:bg-blue-700 transition-colors">Return to Home</button>
+    <!-- ── Quiz failed ────────────────────────────────────── -->
+    <div id="quiz-failed-container" class="hidden card status-screen">
+      <div class="status-icon">😔</div>
+      <h2 class="text-2xl font-bold text-red-500 mb-3">Qualification Not Passed</h2>
+      <p class="text-slate-600 mb-6 max-w-md mx-auto">You did not meet the pass threshold for the initial qualification quiz. Thank you for your time.</p>
+      <p class="text-sm text-slate-400 mb-2">Your completion code:</p>
+      <p class="completion-code mb-6" id="quizFailedCode"></p>
+      <button id="returnHomeButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded-lg transition-colors">Return to Home</button>
     </div>
 
-    <div id="sanity-failed-container" class="hidden text-center mt-10 p-8 bg-white rounded-lg shadow-xl">
-      <h2 class="text-3xl font-bold text-red-600 mb-4">Study Terminated</h2>
-      <p class="text-lg text-gray-700 mb-6">Thank you for your participation. The study has been concluded.</p>
-      <p class="text-lg text-gray-700">Your completion code is:</p>
-      <p class="text-2xl font-mono bg-gray-100 p-3 my-3 inline-block rounded-md border border-gray-300" id="sanityFailedCode"></p>
-      <br>
-      <button id="returnHome2Button" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-md hover:bg-blue-700 transition-colors">Return to Home</button>
+    <!-- ── Sanity failed ───────────────────────────────────── -->
+    <div id="sanity-failed-container" class="hidden card status-screen">
+      <div class="status-icon">🔔</div>
+      <h2 class="text-2xl font-bold text-slate-700 mb-3">Study Concluded</h2>
+      <p class="text-slate-600 mb-6 max-w-md mx-auto">Thank you for your participation. The study has been concluded for your session.</p>
+      <p class="text-sm text-slate-400 mb-2">Your completion code:</p>
+      <p class="completion-code mb-6" id="sanityFailedCode"></p>
+      <button id="returnHome2Button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded-lg transition-colors">Return to Home</button>
     </div>
 
-    <div id="message-container" class="hidden text-center mt-10 p-8 bg-white rounded-lg shadow-xl">
-      <h2 id="message-header" class="text-3xl font-bold mb-4"></h2>
-      <p id="message-body" class="text-lg text-gray-700"></p>
+    <!-- ── Generic message ────────────────────────────────── -->
+    <div id="message-container" class="hidden card status-screen">
+      <h2 id="message-header" class="text-2xl font-bold mb-3"></h2>
+      <p id="message-body" class="text-slate-600"></p>
     </div>
 
-    <div id="completion" class="hidden text-center mt-10 p-8 bg-white rounded-lg shadow-xl">
-      <h2 class="text-3xl font-bold text-green-600 mb-4">All done! Thank you!</h2>
-      <p class="text-lg text-gray-700">Your completion code is:</p>
-      <p class="text-2xl font-mono bg-gray-100 p-3 my-3 inline-block rounded-md border border-gray-300" id="completionCode"></p>
+    <!-- ── Completion ─────────────────────────────────────── -->
+    <div id="completion" class="hidden card status-screen">
+      <div class="status-icon">🎉</div>
+      <h2 class="text-2xl font-bold text-green-600 mb-2">All done — thank you!</h2>
+      <p class="text-slate-600 mb-6">Your responses have been recorded. Here is your completion code:</p>
+      <p class="completion-code" id="completionCode"></p>
     </div>
 
+    <!-- ── Error modal ────────────────────────────────────── -->
     <div id="error-modal" class="modal-overlay hidden">
       <div class="modal-content">
-        <h3 class="text-xl font-bold text-red-600 mb-4">Error</h3>
-        <p id="error-message" class="text-gray-700"></p>
+        <div class="text-4xl mb-3">⚠️</div>
+        <h3 class="text-lg font-bold text-red-600 mb-3">Something went wrong</h3>
+        <p id="error-message" class="text-slate-600 text-sm"></p>
       </div>
     </div>
 
-    <!-- Quiz Feedback Modal -->
+    <!-- ── Quiz feedback modal ────────────────────────────── -->
     <div id="feedback-modal" class="modal-overlay hidden">
       <div class="modal-content">
         <h3 id="feedback-header" class="text-2xl font-bold mb-3"></h3>
-        <p id="feedback-explanation" class="text-gray-700 mb-5"></p>
-        <button id="feedback-continue-button" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-700">Continue</button>
+        <p id="feedback-explanation" class="text-slate-600 text-sm mb-6 text-left leading-relaxed"></p>
+        <button id="feedback-continue-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded-lg transition-colors">Continue</button>
       </div>
     </div>
+
   </div>
 
   <script>
