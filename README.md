@@ -35,7 +35,8 @@ Participants watch side-by-side recordings of robots attempting identical tasks 
 │   └── check_videos.js         # Validates video file integrity
 │
 └── backend/
-    ├── config.py               # ← All runtime configuration lives here
+    ├── config.example.py       # Configuration template — copy to config.py and fill in
+    ├── config.py               # Your local config (gitignored — never committed)
     ├── main.py                 # FastAPI server — data collection & live dashboard
     ├── schema.sql              # PostgreSQL schema
     └── README.md               # Backend setup & API reference
@@ -79,7 +80,13 @@ python3 -m http.server 8080
 
 ### 5. Set Up the Backend
 
-See **[backend/README.md](backend/README.md)**. All configuration — database credentials, CORS origins, pairs file mapping — lives in `backend/config.py`.
+See **[backend/README.md](backend/README.md)**. Start by copying the config template:
+
+```bash
+cd backend && cp config.example.py config.py
+```
+
+Then fill in your database credentials and CORS origin in `config.py`.
 
 ---
 
