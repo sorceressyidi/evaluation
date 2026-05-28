@@ -7,21 +7,21 @@ const path = require('path');
 // Original quiz configuration from videos.html
 const oldQuizIndices = {
     1: { correct_answer: 'left'},
-    7: { correct_answer: 'same'},
-    22: { correct_answer: 'left'},
-    360: { correct_answer: 'right'},
-    420: { correct_answer: 'left'},
-    1099: { correct_answer: 'left'},
-    1653: { correct_answer: 'left' },
-    3092: { correct_answer: 'right'},
-    3200: { correct_answer: 'left'},
-    3700: { correct_answer: 'same'}
+    72: { correct_answer: 'same'},
+    253: { correct_answer: 'left'},
+    311: { correct_answer: 'right'},
+    320: { correct_answer: 'left'},
+    2: { correct_answer: 'left'},
+    17: { correct_answer: 'left' },
+    73: { correct_answer: 'right'},
+    79: { correct_answer: 'left'},
+    276: { correct_answer: 'same'}
 };
 
 function findQuizPairs() {
     // Load both files
-    const pairsOld = JSON.parse(fs.readFileSync('./videos/pairs_old.json', 'utf8'));
-    const pairsNew = JSON.parse(fs.readFileSync('./videos/pairs.json', 'utf8'));
+    const pairsOld = JSON.parse(fs.readFileSync('./videos/pairs_droid_1.json', 'utf8'));
+    const pairsNew = JSON.parse(fs.readFileSync('./videos/pairs_droid.json', 'utf8'));
 
     console.log('\n=== SEARCHING FOR OLD QUIZ PAIRS IN NEW PAIRS.JSON ===\n');
 

@@ -128,6 +128,60 @@
     }
     .rating-btn:active:not(:disabled) { transform: translateY(0) !important; }
 
+    /* ── Per-video scoring ─────────────────────────────── */
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+    .score-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      background: #f8fafc;
+    }
+    .score-card h3 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 0.65rem;
+    }
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .score-range {
+      flex: 1;
+      accent-color: #2563eb;
+    }
+    .score-number {
+      width: 4.75rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.7rem;
+      padding: 0.45rem 0.6rem;
+      font-size: 0.95rem;
+      text-align: center;
+      background: white;
+    }
+    .score-number:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    .score-help {
+      margin-top: 0.55rem;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .score-value {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
     /* ── Textarea ────────────────────────────────────────── */
     textarea {
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -293,13 +347,31 @@
             class="text-white font-bold py-2.5 px-8 rounded-lg disabled:bg-slate-300 disabled:cursor-not-allowed">
             Submit Descriptions
           </button>
-          <p class="text-xs text-slate-400 mt-2">Describe both videos above before continuing.</p>
+          <p class="text-xs text-slate-400 mt-2">Describe both videos above before continuing to scoring and final preference.</p>
         </div>
 
         <!-- Step 2: rating (locked until descriptions submitted) -->
         <fieldset id="evaluationFieldset">
           <div class="section-divider"></div>
           <legend class="block text-xs font-semibold text-slate-400 uppercase tracking-wide text-center mb-4">Your evaluation</legend>
+          <div class="score-grid">
+            <div class="score-card">
+              <h3>Policy A Score</h3>
+              <div class="score-row">
+                <input id="scoreLeftRange" class="score-range" type="range" min="0" max="100" step="1" value="50">
+                <input id="scoreLeftInput" class="score-number" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0-100" aria-label="Policy A score">
+              </div>
+              <p class="score-help">Score this video from `0` to `100`, where `100` means full task success. Current: <span id="scoreLeftValue" class="score-value">Not set</span></p>
+            </div>
+            <div class="score-card">
+              <h3>Policy B Score</h3>
+              <div class="score-row">
+                <input id="scoreRightRange" class="score-range" type="range" min="0" max="100" step="1" value="50">
+                <input id="scoreRightInput" class="score-number" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0-100" aria-label="Policy B score">
+              </div>
+              <p class="score-help">Score this video from `0` to `100`, where `100` means full task success. Current: <span id="scoreRightValue" class="score-value">Not set</span></p>
+            </div>
+          </div>
           <div class="flex flex-wrap justify-center gap-3 mb-2" id="ratingButtonsContainer">
             <button type="button" class="rating-btn left" data-value="left">👈 Left is Better</button>
             <button type="button" class="rating-btn tie"  data-value="same">🤝 Tie</button>
@@ -322,7 +394,7 @@
         </fieldset>
       </form>
 
-      <p class="text-center text-xs text-slate-400 mt-3 italic">Please watch both videos before making a selection.</p>
+      <p class="text-center text-xs text-slate-400 mt-3 italic">Please watch both videos fully before scoring them and making a final selection. Do not judge based only on halfway behavior.</p>
     </div>
 
     <!-- ── Quiz failed ────────────────────────────────────── -->
@@ -393,10 +465,10 @@
         NUM_INITIAL_QUIZ: 10,      // Number of quiz videos shown at the start (for paid workers)
         
         // Sanity check configuration
-        // Every 10 videos, 2 random sanity checks are inserted (from the 40 quiz pairs pool)
+        // Every 10 videos, 1 random sanity check is inserted (from the 40 quiz pairs pool)
         // If user fails 2 total sanity checks, they are kicked out
         SANITY_CHECK: {
-          CHECKS_PER_BATCH: 2,      // 2 sanity checks per every 10 videos
+          CHECKS_PER_BATCH: 1,      // 1 sanity check per every 10 videos
           BATCH_SIZE: 10,           // Every 10 videos
           MAX_FAILURES: 2           // Kick out after 2 wrong sanity checks total
         }
@@ -408,199 +480,138 @@
       // - Free workers: All used for sanity checks (2 per every 10 videos)
       // If user fails 2 sanity checks total, they are kicked out
       const ALL_QUIZ_PAIRS = {
-        // Original 10 quiz pairs (used for initial quiz for paid workers)
-        14: {  
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot only reaches the can and tries to move it.' 
+        // droid_Move the green brick into the bowl_droid1034 (gr00t rollout 1 vs gr00t rollout 2)
+        0: {
+          correct_answer: 'same',
+          explanation: 'Policy A only puts the gripper near the green brick\nPolicy B only puts the gripper near the green brick'
         },
-        25: { 
-          correct_answer: 'same', 
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot reaches the can and then moves it to the right of the pot.' 
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 1 vs gr00t rollout 3)
+        145: {
+          correct_answer: 'right',
+          explanation: 'Policy A reaches the small bottle first, moves the bottle but picks it up and moves it back near its original position.\nPolicy B reaches the small bottle and moves it to the left side of the table.'
         },
-        52: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot only reaches the can without moving it.' 
-        },
-        650: { 
-          correct_answer: 'right', 
-          explanation: 'Policy A: The left robot reaches the cloth and makes some movements to move it but fails.\nPolicy B: The right robot reaches the cloth, and then moves it to the bottom left of the table below the yellow pepper.' 
-        },
-        695: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the cloth, makes some attempts to finish the task and moves the cloth a bit.\nPolicy B: The right robot makes no meaningful movement.' 
-        },
-        2548: {
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the spoon, picks it up and puts it on the yellow cloth.\nPolicy B: The right robot reaches the spoon and tries to pick it up.' 
-        },
-        4210: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the blue bowl, grasps it and moves it to the upper right side of the table.\nPolicy B: The right robot only tries to reach the blue bowl.' 
-        },
-        4683: { 
-          correct_answer: 'right', 
-          explanation: 'Policy A: The left robot makes no meaningful move. \nPolicy B:The right robot reaches the cylinder, and moves it to the right of the chess pawn.'
-        },
-        4790: {  
-          correct_answer: 'right', 
-          explanation: 'Policy A: The left robot only tries a bit to reach the cylinder. \n Policy B: The right robot picks up and moves the cylinder to the chess pawn. \n' 
-        },
-        8231: {
-          correct_answer: 'same', 
-          explanation: 'Policy A: The left robot moves closer to the knife but does not pick it up.\nPolicy B: The right robot moves closer to the knife but does not pick it up.' 
-        },
-        // Additional 30 quiz pairs for sanity checks (selected using this tool)
-        // Move the can to the right of the pot (octo vs spatial)
-        1: {
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 1 vs pi rollout 1)
+        149: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\nPolicy B: The right robot only reaches the can without moving it.'
+          explanation: 'Policy A reaches the small bottle first, moves the bottle but picks it up and moves it back near its original position.\nPolicy B does nothing meaningful'
         },
-        // Move the can to the right of the pot (cogact vs octo)
-        100: {
+        // droid_Take the object and scrub the inside of the jug_droid28 (gr00t rollout 1 vs molmoact2 rollout 2)
+        183: {
+          correct_answer: 'right',
+          explanation: 'Policy A does nothing meaningful.\nPolicy B recognize the object to scrub the jug and tries to pick it up.'
+        },
+        // droid_put toy bear into black bowl_droid2 (gr00t rollout 1 vs gr00t rollout 2)
+        252: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot moves the can to the right of the pot.\nPolicy B: The right robot reaches the can and then attemps to move it a bit but fails to finish the task.'
+          explanation: 'Policy A reaches the toy bear, picks it up and puts it into the bowl although accidentally push cup off the table.\nPolicy B only reaches the toy bear.'
         },
-        // Move the cheese into the silver pot (octo vs xvla)
-        200: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the cheese.\nPolicy B: The right robot reaches the cheese, picks it up and puts it beside the silver pot.'
-        },
-        // Move the cheese into the silver pot (octo vs robovlm)
-        300: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot makes no meaningful movement.\nPolicy B: The right robot reaches the cheese and moves it beside the silver pot.'
-        },
-        801: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot reaches the knife, picks it up and puts it a little down between the pot and the pepper\nPolicy B: The right robot reaches the knife and tries to pick it up.'
-        },
-        931: {
+        // droid_Move the grey tape to the right_droid41 (gr00t rollout 3 vs molmoact2 rollout 3)
+        449: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the pot, picks it up and puts it on the towel.\nPolicy B: The right robot reaches the pot and tries to pick it up.'
+          explanation: 'Policy A reaches the gray tape and tries to move it.\nPolicy B only moves around a bit near the gray tape'
         },
-        // Pick up milk bottle (cogact vs spatial)
-        1065: {
+        // droid_stack cup on bowl_droid69 (gr00t rollout 2 vs molmoact2 rollout 3)
+        551: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot reaches and moves the blue cloth.\nPolicy B: The right robot reaches and picks up the milk bottle.'
+          explanation: 'Policy A only moves near the cup and bowl. \nPolicy B successfully puts the cup into the bowl.'
         },
-        // Pick up the salmon and put it in the pot (cogact vs robovlm)
-        1323: {
+        // droid_pick up yellow cup_droid7 (gr00t rollout 1 vs molmoact2 rollout 1)
+        578: {
+          correct_answer: 'right',
+          explanation: 'Policy A only reaches the yellow cup and tries to pick it up.\nPolicy B picks up the yellow cup and moves it.'
+        },
+        // droid_put lego into a bowl_droid820 (gr00t rollout 2 vs molmoact2 rollout 1)
+        621: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the salmon, picks it up and puts inside the pot.\nPolicy B: The right robot only reaches the pot.'
+          explanation: 'Policy A puts the green lego into the bowl.\nPolicy B tries to pick up the green lego.'
         },
-        1600: {
+        // droid_pick up the tape_droid8 (molmoact2 rollout 1 vs pi rollout 1)
+        671: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the brush, picks it up and puts it on the napkin.\nPolicy B: The right robot only reaches the brush without picking it up.'
+          explanation: 'Policy A reaches the tape, moves it a bit and tries to pick it up.\nPolicy B only moves around the tape without picking anything.'
         },
-        // Place the metal pot on the front left corner of the purple towel (octo vs spatial)
-        2002: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot makes no meaningful movement.\nPolicy B: The right robot reaches the pot and tries to pick it up.\n   '
-        },
-        // Put the metal pan on the blue cloth (cogact vs spatial)
-        2700: {
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 1 vs molmoact2 rollout 1)
+        146: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the pan and tries to pick it up\nPolicy B: The right robot makes no meaningful movement.'
+          explanation: 'TODO: Add explanation'
         },
-        // Put the metal pan on the blue cloth_test0 (pi0 vs spatial)
-        2800: {
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 1 vs pi rollout 3)
+        151: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the pan, picks it up and on the cloth.\nPolicy B: The right robot only reaches the pan.'
+          explanation: 'TODO: Add explanation'
         },
-        // Put the spoon on top of the purple towel (cogact vs octo)
-        3000: {
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 3 vs molmoact2 rollout 2)
+        160: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the spoon, picks it up and puts it on the cloth.\nPolicy B: The right robot only reaches spoon a bit.'
+          explanation: 'TODO: Add explanation'
         },
-        // Put the stuffed dog inside the pot (pi0 vs spatial)
-        3171: {
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 3 vs molmoact2 rollout 3)
+        161: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the stuffed dog, picks it up and puts beside the pot.\nPolicy B: The right robot only reaches the stuffed dog and picks it up.'
+          explanation: 'TODO: Add explanation'
         },
-        // Put the stuffed dog inside the pot_test0 (cogact vs robovlm)
-        3304: {
+        // droid_Take the object and scrub the inside of the jug_droid28 (gr00t rollout 1 vs molmoact2 rollout 3)
+        184: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot does nothing meaningful.\nPolicy B: The right robot reaches the stuffed dog, and tries to pick it up.'
+          explanation: 'TODO: Add explanation'
         },
-        // Put the stuffed dog inside the pot_test0 (octo vs pi0)
-        3331: {
+        // droid_Take the object and scrub the inside of the jug_droid28 (gr00t rollout 2 vs molmoact2 rollout 1)
+        189: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the stuffed dog.\nPolicy B: The right robot reaches the stuffed dog, picks it up and puts it inside the pot.'
+          explanation: 'TODO: Add explanation'
         },
-        // Put the stuffed dog inside the pot_test0 (octo vs xvla)
-        3340: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the stuffed dog.\nPolicy B: The right robot reaches the stuffed dog, picks it up and puts it inside the pot.'
-        },
-        // move blue cloth from center to right bottom corner (cogact vs spatial)
-        3104: { 
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot reaches the bowl\nPolicy B: The right robot picks up the bowl and moves it to the upper right.'
-        },
-        // move the blue brush to the upper left corner of the table (pi0 vs xvla)
-        4300: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the brush.\nPolicy B: The right robot reaches the blue brush and moves it to the upper left corner of the table'
-        },
-        // move the cylinder to the right side of the chess pawn (cogact vs octo)
-        4700: {
+        // droid_put toy bear into black bowl_droid2 (gr00t rollout 1 vs gr00t rollout 3)
+        253: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot only reaches the cylinder and moves it a bit to the right.\nPolicy B: The right robot makes no meaningful movement.'
+          explanation: 'TODO: Add explanation'
         },
-        // moved the brown transparent bowl to the right side of the table (robovlm vs xvla)
-        6400: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the bowl and tries to pick it up.\nPolicy B: The right robot reaches the bowl and picks it up.'
-        },
-        // put banana in colander_test0 (octo vs pi0)
-        7400: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the banana and picks it up.\nPolicy B: The right robot reaches the banana, picks it up and puts it inside the pot.'
-        },
-        // put banana in colander_test0 (pi0 vs xvla)
-        7404: {
+        // droid_put toy bear into black bowl_droid2 (gr00t rollout 1 vs molmoact2 rollout 3)
+        256: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the banana and puts it inside the pot.\nPolicy B: The right robot reaches pot.'
+          explanation: 'TODO: Add explanation'
         },
-        // put banana in colander_test0 (spatial vs xvla)
-        7411: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the banana and tries to pick it up.\nPolicy B: The right robot reaches the banana, picks it up and puts it inside the pot.'
-        },
-        // put banana in colander_test0 (cogact vs xvla)
-        7423: {
-          correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the banana and tries to pick it up.\nPolicy B: The right robot reaches the banana, picks it up and puts it inside the pot.'
-        },
-        // put blue cube to left corner of the table (cogact vs robovlm)
-        7643: {
+        // droid_put toy bear into black bowl_droid2 (gr00t rollout 1 vs pi rollout 3)
+        259: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot puts brown toy at the bottom center of the table.\nPolicy B: The right robot makes no meaningful movement.'
+          explanation: 'TODO: Add explanation'
         },
-        // put knife on towel (pi0 vs spatial)
-        8422: {
+        // droid_put toy bear into black bowl_droid2 (molmoact2 rollout 1 vs pi rollout 2)
+        276: {
           correct_answer: 'left',
-          explanation: 'Policy A: The left robot reaches the knife, picks it up and puts it on the green cloth.\nPolicy B: The right robot only reaches the knife and tries to pick it up.'
+          explanation: 'TODO: Add explanation'
         },
-        // put knife on towel (spatial vs xvla)
-        8429: {
+        // droid_stack cup on bowl_droid69 (gr00t rollout 3 vs molmoact2 rollout 3)
+        557: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the knife.\nPolicy B: The right robot reaches the knife, picks it up and puts it on the green cloth.'
+          explanation: 'TODO: Add explanation'
         },
-        // put knife on towel_test0 (octo vs xvla)
-        8503: {
+        // droid_pick up yellow cup_droid7 (gr00t rollout 1 vs molmoact2 rollout 2)
+        579: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the knife.\nPolicy B: The right robot reaches the knife, picks it up and puts it on the green cloth.'
+          explanation: 'TODO: Add explanation'
         },
-        // put lid on pot (cogact vs pi0)
-        8506: {
+        // droid_pick up yellow cup_droid7 (gr00t rollout 1 vs molmoact2 rollout 3)
+        580: {
           correct_answer: 'right',
-          explanation: 'Policy A: The left robot only reaches the lid.\nPolicy B: The right robot reaches the lid, picks it up and puts it on the pot.'
+          explanation: 'TODO: Add explanation'
+        },
+        // droid_put lego into a bowl_droid820 (gr00t rollout 2 vs pi rollout 2)
+        625: {
+          correct_answer: 'left',
+          explanation: 'TODO: Add explanation'
+        },
+        // droid_pick up the tape_droid8 (molmoact2 rollout 3 vs pi rollout 3)
+        680: {
+          correct_answer: 'left',
+          explanation: 'TODO: Add explanation'
         }
       };
 
       // First 10 indices are used for initial quiz (paid workers only)
-      const INITIAL_QUIZ_INDICES = [14, 25, 52, 650, 695, 2548, 4210, 4683, 4790, 8231];
+      const INITIAL_QUIZ_INDICES = [0, 145, 149, 183, 252, 449, 551, 578, 621, 671];
+
+      // Selector summary: 10 initial quiz, 15 sanity-only.
+      // Recommended target for paid-worker quiz: 10.
 
       // ========== END CONFIGURATION ==========
 
@@ -696,6 +707,12 @@
       const descriptionRight = document.getElementById('descriptionRight');
       const submitDescriptionsBtn = document.getElementById('submitDescriptionsBtn');
       const evaluationFieldset = document.getElementById('evaluationFieldset');
+      const scoreLeftRange = document.getElementById('scoreLeftRange');
+      const scoreLeftInput = document.getElementById('scoreLeftInput');
+      const scoreLeftValue = document.getElementById('scoreLeftValue');
+      const scoreRightRange = document.getElementById('scoreRightRange');
+      const scoreRightInput = document.getElementById('scoreRightInput');
+      const scoreRightValue = document.getElementById('scoreRightValue');
       const finishEarlyButton = document.getElementById('finishEarlyButton');
       const finishEarlyContainer = document.getElementById('finishEarlyContainer');
       const quizFailedContainer = document.getElementById('quiz-failed-container');
@@ -717,14 +734,14 @@
         window.location.href = 'index.html';
       });
 
-      // Load pairs.json
+      // Load pairs_droid.json
       try {
-        const res = await fetch('./videos/pairs.json');
+        const res = await fetch('./videos/pairs_droid.json');
         if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
         allPairs = await res.json();
       } catch (err) {
-        console.error('Failed to load pairs.json:', err);
-        showErrorModal('⚠️ Could not load videos. Please ensure pairs.json exists.');
+        console.error('Failed to load pairs_droid.json:', err);
+        showErrorModal('⚠️ Could not load videos. Please ensure pairs_droid.json exists.');
         return;
       }
 
@@ -910,6 +927,68 @@
         }
       }
 
+      function clampVideoScore(rawValue) {
+        if (rawValue === '' || rawValue === null || rawValue === undefined) return null;
+        const parsed = Number(rawValue);
+        if (!Number.isFinite(parsed)) return null;
+        return Math.min(100, Math.max(0, Math.round(parsed)));
+      }
+
+      function setScoreValue(rangeElem, numberElem, valueElem, rawValue, touched = true) {
+        const score = clampVideoScore(rawValue);
+
+        if (score === null) {
+          rangeElem.value = '50';
+          numberElem.value = '';
+          valueElem.textContent = 'Not set';
+          rangeElem.dataset.touched = 'false';
+          updateEvaluationButtons();
+          return;
+        }
+
+        rangeElem.value = String(score);
+        numberElem.value = String(score);
+        valueElem.textContent = String(score);
+        rangeElem.dataset.touched = touched ? 'true' : 'false';
+        updateEvaluationButtons();
+      }
+
+      function hasCompleteScore(rangeElem, numberElem) {
+        return rangeElem.dataset.touched === 'true' && clampVideoScore(numberElem.value) !== null;
+      }
+
+      function updateEvaluationButtons() {
+        const hasPreference = Boolean(document.querySelector('.rating-btn.selected'));
+        const hasScores = hasCompleteScore(scoreLeftRange, scoreLeftInput) && hasCompleteScore(scoreRightRange, scoreRightInput);
+        const ready = hasPreference && hasScores;
+        nextButton.disabled = !ready;
+        finishEarlyButton.disabled = !ready;
+      }
+
+      function attachScoreHandlers(rangeElem, numberElem, valueElem) {
+        rangeElem.dataset.touched = 'false';
+
+        rangeElem.addEventListener('input', () => {
+          setScoreValue(rangeElem, numberElem, valueElem, rangeElem.value, true);
+        });
+
+        numberElem.addEventListener('input', () => {
+          if (numberElem.value === '') {
+            setScoreValue(rangeElem, numberElem, valueElem, null, false);
+            return;
+          }
+          setScoreValue(rangeElem, numberElem, valueElem, numberElem.value, true);
+        });
+
+        numberElem.addEventListener('blur', () => {
+          if (numberElem.value === '') return;
+          setScoreValue(rangeElem, numberElem, valueElem, numberElem.value, true);
+        });
+      }
+
+      attachScoreHandlers(scoreLeftRange, scoreLeftInput, scoreLeftValue);
+      attachScoreHandlers(scoreRightRange, scoreRightInput, scoreRightValue);
+
       function resetUIForNewPair() {
         descriptionLeft.value = '';
         descriptionRight.value = '';
@@ -919,6 +998,8 @@
         document.getElementById('descriptionSubmitContainer').classList.remove('hidden');
         evaluationFieldset.classList.add('disabled');
         ratingButtons.forEach(btn => btn.classList.remove('selected'));
+        setScoreValue(scoreLeftRange, scoreLeftInput, scoreLeftValue, null, false);
+        setScoreValue(scoreRightRange, scoreRightInput, scoreRightValue, null, false);
         nextButton.disabled = true;
         finishEarlyButton.disabled = true;
       }
@@ -1036,6 +1117,13 @@
         const selectedPreference = selectedBtn.getAttribute('data-value');
         const descLeftText = descriptionLeft.value;
         const descRightText = descriptionRight.value;
+        const leftVideoScore = clampVideoScore(scoreLeftInput.value);
+        const rightVideoScore = clampVideoScore(scoreRightInput.value);
+
+        if (leftVideoScore === null || rightVideoScore === null) {
+          alert('Please score both videos on the 0-100 scale before submitting.');
+          return;
+        }
 
         if (participantState.phase === 'quiz') {
           // Quiz phase (paid workers only - 10 initial quiz questions)
@@ -1063,6 +1151,8 @@
             answer: `${selectedPreference}_${originalIndex}`,
             description_A: descLeftText,
             description_B: descRightText,
+            score_A: leftVideoScore,
+            score_B: rightVideoScore,
             type: 'quiz',
             correct: isCorrect
           });
@@ -1115,6 +1205,8 @@
               answer: `${selectedPreference}_${originalIndex}`,
               description_A: descLeftText,
               description_B: descRightText,
+              score_A: leftVideoScore,
+              score_B: rightVideoScore,
               type: 'sanity_check',
               correct: isCorrect
             });
@@ -1137,6 +1229,8 @@
               answer: `${selectedPreference}_${originalIndex}`,
               description_A: descLeftText,
               description_B: descRightText,
+              score_A: leftVideoScore,
+              score_B: rightVideoScore,
               type: 'regular'
             });
           }
@@ -1188,7 +1282,7 @@
           failure_reason: isFailed ? participantState.phase : null,
           responses: participantState.responses,
           timestamp: new Date().toISOString(),
-          config_version: 'v1.0-official'
+          config_version: 'v2.0-official'
         };
 
         console.log("Submitting payload:", payload);
@@ -1246,8 +1340,7 @@
         btn.addEventListener('click', () => {
           ratingButtons.forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
-          nextButton.disabled = false;
-          finishEarlyButton.disabled = false;
+          updateEvaluationButtons();
         });
       });
 
