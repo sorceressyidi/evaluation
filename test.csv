@@ -1,0 +1,31 @@
+annotation_id,participant_id,participant_type,completion_code,timestamp,created_at,config_version,failed,failure_reason,quiz_score,quiz_total,sanity_checks_passed,sanity_checks_total,response_type,answer,choice,pair_index,description_a,description_b,score_a,score_b
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_677,left,677,moves the tape,1,76,27
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_419,same,419,1,1,20,20
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_728,same,728,Stack 3 cups together,Stack 3 cups together,19,19
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,right_684,right,684,1,Use cup to pour something granular,47,65
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_11,same,11,1,1 Move the green brick into the bowl,16,10
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,right_344,right,344,Place the cup close to the sheet,Place the cup close to the sheet,29,45
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_216,same,216,put yellow duck in pot,put yellow duck in pot,4,10
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_302,left,302,stack 2 bowls on top of one another,1,68,27
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_713,left,713,Use cup to pour something granular,Use cup to pour something granular,39,16
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_488,left,488,Move the blue towel slightly to the right on the mat,Move the blue towel slightly to the right on the mat,62,29
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,right_588,right,588,1,1,45,53
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_360,same,360,Place the pen inside the yellow mug,Place the pen inside the yellow mug,29,22
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_633,left,633,1,1,74,36
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_545,left,545,1,1,62,37
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_364,same,364,1,1,18,10
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_541,same,541,1,1,41,42
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,right_316,right,316,1,1,12,24
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_512,same,512,1,1,20,20
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_550,left,550,1,1,62,35
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_572,left,572,1,1,100,7
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_267,same,267,1,1,13,20
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_438,left,438,1,1,68,22
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_307,same,307,1,1,13,17
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_597,same,597,1,1,100,100
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,left_55,left,55,1,1,78,12
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_112,same,112,1111,1111,40,35
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_708,same,708,1,1,63,32
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,same_472,same,472,Move the blue towel slightly to the right on the mat,Move the blue towel slightly to the right on the mat,0,0
+259,yidi,free,LHGBPVU4,2026-05-27 22:25:35.032,2026-05-27 22:25:36.866851,v2.0-official,f,,0,0,3,3,regular,right_356,right,356,Place the cup close to the sheet,Place the cup close to the sheet,35,50
+,,,,,,,,,,,,,,,,,,,,

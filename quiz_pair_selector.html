@@ -90,7 +90,12 @@
     <div class="stats-bar bg-white rounded-lg shadow-md p-4 mb-6 flex flex-wrap gap-6 items-center">
       <div class="text-lg">
         <span class="font-bold text-green-600" id="selectedCount">0</span>
-        <span class="text-gray-600">/ 30 pairs selected</span>
+        <span class="text-gray-600">pairs selected</span>
+      </div>
+      <div class="text-sm text-gray-600">
+        Initial quiz: <span class="font-bold text-blue-600" id="initialQuizCount">0</span>
+        <span class="text-gray-400">|</span>
+        Sanity only: <span class="font-bold text-emerald-600" id="sanityCount">0</span>
       </div>
       <div class="text-sm text-gray-500">
         Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> pairs
@@ -144,14 +149,43 @@
       // State
       let allPairs = [];
       let filteredPairs = [];
-      let selectedPairs = {}; // { index: { correct_answer: 'left'|'right'|'same', explanation: '' } }
+      let selectedPairs = {}; // { index: { correct_answer: 'left'|'right'|'same', explanation: '', use_for_initial_quiz: boolean } }
       let currentPage = 1;
       const pairsPerPage = 10;
+      const defaultInitialQuizTarget = 10;
       
       // Load from localStorage
       const savedSelections = localStorage.getItem('quizPairSelections');
       if (savedSelections) {
         selectedPairs = JSON.parse(savedSelections);
+      }
+
+      function normalizeSelection(selection) {
+        return {
+          correct_answer: selection?.correct_answer || '',
+          explanation: selection?.explanation || '',
+          use_for_initial_quiz: !!selection?.use_for_initial_quiz,
+        };
+      }
+
+      function pruneInvalidSelections() {
+        const validSelections = {};
+        let removedCount = 0;
+
+        for (const [rawIndex, selection] of Object.entries(selectedPairs)) {
+          const index = Number(rawIndex);
+          if (Number.isInteger(index) && index >= 0 && index < allPairs.length) {
+            validSelections[index] = normalizeSelection(selection);
+          } else {
+            removedCount += 1;
+          }
+        }
+
+        selectedPairs = validSelections;
+        if (removedCount > 0) {
+          saveSelections();
+          console.warn(`Removed ${removedCount} stale saved quiz selections that do not exist in the current pairs.json.`);
+        }
       }
       
       // Elements
@@ -161,6 +195,8 @@
       const taskFilter = document.getElementById('taskFilter');
       const showFilter = document.getElementById('showFilter');
       const selectedCountEl = document.getElementById('selectedCount');
+      const initialQuizCountEl = document.getElementById('initialQuizCount');
+      const sanityCountEl = document.getElementById('sanityCount');
       const showingCountEl = document.getElementById('showingCount');
       const totalCountEl = document.getElementById('totalCount');
       const prevPageBtn = document.getElementById('prevPageBtn');
@@ -178,9 +214,10 @@
       
       // Load pairs.json
       try {
-        const res = await fetch('./videos/pairs.json');
+        const res = await fetch('./videos/pairs_droid.json');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         allPairs = await res.json();
+        pruneInvalidSelections();
         
         // Extract unique tasks
         const tasks = new Set();
@@ -242,6 +279,7 @@
         pagePairs.forEach(({ pair, index }) => {
           const isSelected = !!selectedPairs[index];
           const selection = selectedPairs[index] || {};
+          const useForInitialQuiz = !!selection.use_for_initial_quiz;
           
           const card = document.createElement('div');
           card.className = `pair-card bg-white rounded-lg shadow-md p-4 border-2 ${isSelected ? 'selected-pair border-green-500' : 'border-transparent'}`;
@@ -272,6 +310,15 @@
             </div>
             
             <div class="border-t pt-3 ${isSelected ? '' : 'opacity-50'}">
+              <div class="flex items-center justify-between mb-3 gap-4">
+                <label class="flex items-center gap-2 text-sm font-medium ${isSelected ? 'text-slate-700' : 'text-slate-400'}">
+                  <input type="checkbox" class="initial-quiz-checkbox" data-index="${index}" ${useForInitialQuiz ? 'checked' : ''} ${isSelected ? '' : 'disabled'}>
+                  Use in initial paid-worker quiz
+                </label>
+                <div class="text-xs ${useForInitialQuiz ? 'text-blue-600 font-semibold' : 'text-slate-400'}">
+                  ${useForInitialQuiz ? 'Initial quiz pair' : 'Sanity-check only'}
+                </div>
+              </div>
               <div class="flex items-center gap-4 mb-3">
                 <span class="font-medium">Correct Answer:</span>
                 <button class="answer-btn px-4 py-2 rounded-md ${selection.correct_answer === 'left' ? 'bg-blue-600 text-white selected' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}" data-index="${index}" data-answer="left">
@@ -310,6 +357,10 @@
         document.querySelectorAll('.answer-btn').forEach(btn => {
           btn.addEventListener('click', () => setAnswer(parseInt(btn.dataset.index), btn.dataset.answer));
         });
+
+        document.querySelectorAll('.initial-quiz-checkbox').forEach(input => {
+          input.addEventListener('change', () => setInitialQuiz(parseInt(input.dataset.index), input.checked));
+        });
         
         document.querySelectorAll('.explanation-input').forEach(input => {
           input.addEventListener('change', () => setExplanation(parseInt(input.dataset.index), input.value));
@@ -320,7 +371,7 @@
         if (selectedPairs[index]) {
           delete selectedPairs[index];
         } else {
-          selectedPairs[index] = { correct_answer: '', explanation: '' };
+          selectedPairs[index] = { correct_answer: '', explanation: '', use_for_initial_quiz: false };
         }
         saveSelections();
         updateStats();
@@ -329,16 +380,26 @@
       
       function setAnswer(index, answer) {
         if (!selectedPairs[index]) {
-          selectedPairs[index] = { correct_answer: '', explanation: '' };
+          selectedPairs[index] = { correct_answer: '', explanation: '', use_for_initial_quiz: false };
         }
         selectedPairs[index].correct_answer = answer;
         saveSelections();
         renderPage();
       }
+
+      function setInitialQuiz(index, checked) {
+        if (!selectedPairs[index]) {
+          selectedPairs[index] = { correct_answer: '', explanation: '', use_for_initial_quiz: false };
+        }
+        selectedPairs[index].use_for_initial_quiz = checked;
+        saveSelections();
+        updateStats();
+        renderPage();
+      }
       
       function setExplanation(index, explanation) {
         if (!selectedPairs[index]) {
-          selectedPairs[index] = { correct_answer: '', explanation: '' };
+          selectedPairs[index] = { correct_answer: '', explanation: '', use_for_initial_quiz: false };
         }
         selectedPairs[index].explanation = explanation;
         saveSelections();
@@ -349,12 +410,32 @@
       }
       
       function updateStats() {
+        const selectedEntries = Object.values(selectedPairs);
+        const initialQuizCount = selectedEntries.filter(item => item.use_for_initial_quiz).length;
         selectedCountEl.textContent = Object.keys(selectedPairs).length;
+        initialQuizCountEl.textContent = initialQuizCount;
+        sanityCountEl.textContent = Object.keys(selectedPairs).length - initialQuizCount;
       }
       
       function generateExportCode() {
-        const entries = Object.entries(selectedPairs)
-          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+        const selectedEntries = Object.entries(selectedPairs)
+          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+
+        if (selectedEntries.length === 0) {
+          return `// No pairs selected yet.`;
+        }
+
+        const missingEntries = selectedEntries.filter(([index]) => !allPairs[Number(index)]);
+        if (missingEntries.length > 0) {
+          throw new Error(`Cannot export because ${missingEntries.length} selected indices are missing from the current pairs.json. Clear stale selections and try again.`);
+        }
+
+        const initialQuizIndices = selectedEntries
+          .filter(([, data]) => data.use_for_initial_quiz)
+          .map(([index]) => parseInt(index));
+
+        const sanityEntries = selectedEntries
+          .filter(([, data]) => !data.use_for_initial_quiz)
           .map(([index, data]) => {
             const pair = allPairs[index];
             const task = extractTask(pair.instruction);
@@ -365,60 +446,35 @@
         }`;
           });
         
-        return `      // All quiz pairs pool (${entries.length + 10} pairs total)
-      // First 10 are for initial quiz (paid workers), rest are for sanity checks
+        const selectedQuizEntries = selectedEntries
+          .filter(([, data]) => data.use_for_initial_quiz)
+          .map(([index, data]) => {
+            const pair = allPairs[index];
+            const task = extractTask(pair.instruction);
+            return `        // ${task} (${pair.videoA.source} vs ${pair.videoB.source})
+        ${index}: {
+          correct_answer: '${data.correct_answer || 'TODO'}',
+          explanation: '${(data.explanation || 'TODO: Add explanation').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'
+        }`;
+          });
+
+        const allEntries = [...selectedQuizEntries, ...sanityEntries];
+
+        return `      // All quiz pairs pool (${allEntries.length} pairs total)
+      // Initial quiz pairs are explicitly listed in INITIAL_QUIZ_INDICES below
       // These are used for:
       // - Paid workers: First 10 as initial quiz, remaining used for sanity checks
       // - Free workers: All used for sanity checks (2 per every 10 videos)
       // If user fails 2 sanity checks total, they are kicked out
       const ALL_QUIZ_PAIRS = {
-        // Original 10 quiz pairs (used for initial quiz for paid workers)
-        13: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\\nPolicy B: The right robot only reaches the can without moving it.' 
-        },
-        25: { 
-          correct_answer: 'same', 
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\\nPolicy B: The right robot reaches the can and then moves it to the right of the pot.' 
-        },
-        52: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the can and then moves it to the right of the pot.\\nPolicy B: The right robot only reaches the can without moving it.' 
-        },
-        638: { 
-          correct_answer: 'right', 
-          explanation: 'Policy A: The left robot reaches the cloth and makes some movements to move it but fails.\\nPolicy B: The right robot reaches the cloth, and then moves it to the bottom left of the table below the yellow pepper.' 
-        },
-        695: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the blue cloth, makes some attempts to finish the task and moves the cloth a bit.\\nPolicy B: The right robot makes no meaningful movement.' 
-        },
-        2544: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the spoon, picks it up and puts it on the yellow cloth.\\nPolicy B: The right robot reaches the spoon, tries to pick it up but fails.' 
-        },
-        4210: { 
-          correct_answer: 'left', 
-          explanation: 'Policy A: The left robot reaches the blue bowl, grasps it and moves it to the upper right side of the table.\\nPolicy B: The right robot only tries to reach the blue fork.' 
-        },
-        4683: { 
-          correct_answer: 'right', 
-          explanation: 'Policy A: The left robot makes no meaningful move.\\nPolicy B: The right robot reaches the cylinder, and moves it to the right of the chess pawn.'
-        },
-        4794: { 
-          correct_answer: 'same', 
-          explanation: 'Policy A: The left robot makes no meaningful move.\\nPolicy B: The right robot makes no meaningful move.' 
-        },
-        8230: { 
-          correct_answer: 'same', 
-          explanation: 'Policy A: The left robot moves closer to the knife but does not pick it up.\\nPolicy B: The right robot moves closer to the knife but does not pick it up.' 
-        },
-        // Additional 30 quiz pairs for sanity checks (selected using this tool)
-${entries.join(',\n')}
+${allEntries.join(',\n')}
       };
 
       // First 10 indices are used for initial quiz (paid workers only)
-      const INITIAL_QUIZ_INDICES = [13, 25, 52, 638, 695, 2544, 4210, 4683, 4794, 8230];`;
+      const INITIAL_QUIZ_INDICES = [${initialQuizIndices.join(', ')}];
+
+      // Selector summary: ${initialQuizIndices.length} initial quiz, ${sanityEntries.length} sanity-only.
+      // Recommended target for paid-worker quiz: ${defaultInitialQuizTarget}.`;
       }
       
       // Event listeners
@@ -466,9 +522,13 @@ ${entries.join(',\n')}
       });
       
       exportBtn.addEventListener('click', () => {
-        const code = generateExportCode();
-        exportCode.textContent = code;
-        exportModal.classList.remove('hidden');
+        try {
+          const code = generateExportCode();
+          exportCode.textContent = code;
+          exportModal.classList.remove('hidden');
+        } catch (error) {
+          alert(error.message);
+        }
       });
       
       copyCodeBtn.addEventListener('click', () => {

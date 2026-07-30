@@ -1,0 +1,64 @@
+      // All quiz pairs pool (10 pairs total)
+      // Initial quiz pairs are explicitly listed in INITIAL_QUIZ_INDICES below
+      // These are used for:
+      // - Paid workers: First 10 as initial quiz, remaining used for sanity checks
+      // - Free workers: All used for sanity checks (2 per every 10 videos)
+      // If user fails 2 sanity checks total, they are kicked out
+      const ALL_QUIZ_PAIRS = {
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 1 vs gr00t rollout 3)
+        1: {
+          correct_answer: 'right',
+          explanation: 'Policy A reaches the small bottle first moves the bottle but picks it up and moves it back near its original position.\nPolicy B reaches the small bottle and moves it to the left side of the table.'
+        },
+        // droid_put toy bear into black bowl_droid2 (gr00t rollout 1 vs gr00t rollout 2)
+        72: {
+          correct_answer: 'left',
+          explanation: 'Policy A reaches the toy bear, picks it up and puts it into the bowl although accidentally push cup off the table\nPolicy B only reaches the toy bear.'
+        },
+        // droid_pick up yellow cup_droid7 (gr00t rollout 1 vs gr00t rollout 3)
+        253: {
+          correct_answer: 'right',
+          explanation: 'Policy B only reaches the yellow cup.\nPolicy B picks up the yellow cup, puts it to the pink bowl and picks them up.'
+        },
+        // droid_pick up the tape_droid8 (molmoact2 rollout 1 vs pi rollout 1)
+        311: {
+          correct_answer: 'left',
+          explanation: 'TODO: Add explanation'
+        },
+        // droid_pick up the tape_droid8 (molmoact2 rollout 3 vs pi rollout 3)
+        320: {
+          correct_answer: 'left',
+          explanation: 'Policy A reaches the tape, moves it a bit and tries to pick it up.\nPolicy B only moves around the tape without picking anything.'
+        },
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 1 vs molmoact2 rollout 1)
+        2: {
+          correct_answer: 'right',
+          explanation: 'Policy A reaches the small bottle first moves the bottle but picks it up and moves it back near its original position.\nPolicy B reaches the small bottle and moves it to the left side of the table.'
+        },
+        // droid_Pick up the small bottle and put it on the left side of the table_droid17 (gr00t rollout 3 vs molmoact2 rollout 3)
+        17: {
+          correct_answer: 'left',
+          explanation: 'Policy A reaches the small bottle and moves it to the left side of the table.\nPolicy B reaches the small bottle and moves it around.'
+        },
+        // droid_put toy bear into black bowl_droid2 (gr00t rollout 1 vs gr00t rollout 3)
+        73: {
+          correct_answer: 'left',
+          explanation: 'TODO: Add explanation'
+        },
+        // droid_put toy bear into black bowl_droid2 (gr00t rollout 1 vs pi rollout 3)
+        79: {
+          correct_answer: 'left',
+          explanation: 'TODO: Add explanation'
+        },
+        // droid_pick up yellow cup_droid7 (molmoact2 rollout 1 vs pi rollout 2)
+        276: {
+          correct_answer: 'left',
+          explanation: 'TODO: Add explanation'
+        }
+      };
+
+      // First 10 indices are used for initial quiz (paid workers only)
+      const INITIAL_QUIZ_INDICES = [1, 72, 253, 311, 320];
+
+      // Selector summary: 5 initial quiz, 5 sanity-only.
+      // Recommended target for paid-worker quiz: 10.

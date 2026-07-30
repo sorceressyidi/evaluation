@@ -350,6 +350,30 @@
     .rating-btn.tie.selected   { background: #ea580c !important; color: #fff !important; border-color: #ea580c !important; box-shadow: 0 4px 14px rgba(234,88,12,0.35); }
     .rating-btn.right.selected { background: #16a34a !important; color: #fff !important; border-color: #16a34a !important; box-shadow: 0 4px 14px rgba(22,163,74,0.35); }
 
+    /* ── Confidence buttons ────────────────────────────────── */
+    .confidence-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .confidence-btn {
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 11px 20px;
+      border-radius: 10px;
+      border: 2px solid var(--gray-200);
+      background: #fff;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .confidence-btn:hover  { border-color: var(--gray-400); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(17,24,39,0.08); }
+    .confidence-btn:active { transform: translateY(0) scale(0.98); }
+    .confidence-btn.selected { background: #4f46e5 !important; color: #fff !important; border-color: #4338ca !important; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
+
     .score-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -438,6 +462,17 @@
       <p>Select your participant type and enter a unique ID to begin. <strong>Using the same ID on the same browser lets you resume your progress.</strong></p>
 
       <div class="input-group">
+        <div class="info-grid">
+          <div class="info-note">
+            <strong>Paid Workers</strong>
+            Use your Amazon Worker ID. You'll complete a short qualification quiz before the main study.
+          </div>
+          <div class="info-note">
+            <strong>Volunteers</strong>
+            Create any unique identifier for yourself to track your progress.
+          </div>
+        </div>
+
         <div>
           <label>Participant Type</label>
           <select id="participantTypeSelect">
@@ -450,17 +485,6 @@
         <div>
           <label>Participant ID</label>
           <input id="participantIdInput" type="text" placeholder="Enter your unique ID" />
-        </div>
-
-        <div class="info-grid">
-          <div class="info-note">
-            <strong>Paid Workers</strong>
-            Use your Amazon Worker ID. You'll complete a short qualification quiz before the main study.
-          </div>
-          <div class="info-note">
-            <strong>Volunteers</strong>
-            Create any unique identifier for yourself to track your progress.
-          </div>
         </div>
 
         <button id="startButton" disabled>Start Study →</button>
@@ -530,11 +554,23 @@
             </div>
           </div>
           <div id="ratingButtonsContainer">
-            <button type="button" class="rating-btn left"  data-value="0">👈 Left is Better</button>
-            <button type="button" class="rating-btn tie"   data-value="1">🤝 Tie</button>
-            <button type="button" class="rating-btn right" data-value="2">Right is Better 👉</button>
+            <button type="button" class="rating-btn left"  data-value="left_much">👈 Left Much Better</button>
+            <button type="button" class="rating-btn left"  data-value="left_slight">👈 Left a Bit Better</button>
+            <button type="button" class="rating-btn tie"   data-value="tie">🤝 Tie</button>
+            <button type="button" class="rating-btn right" data-value="right_slight">Right a Bit Better 👉</button>
+            <button type="button" class="rating-btn right" data-value="right_much">Right Much Better 👉</button>
           </div>
-          <div class="sub-instruction">(equally good or equally bad)</div>
+          <div class="sub-instruction">(equally good or equally bad counts as a tie)</div>
+
+          <div class="score-card" style="margin-top:16px;">
+            <h3>Your Confidence</h3>
+            <div class="confidence-row" id="confidenceButtonsContainer">
+              <button type="button" class="confidence-btn" data-confidence="very">😀 Very Confident</button>
+              <button type="button" class="confidence-btn" data-confidence="fair">🙂 Fairly Confident</button>
+              <button type="button" class="confidence-btn" data-confidence="unsure">😕 Unsure</button>
+            </div>
+            <div class="score-help">How confident are you in this decision?</div>
+          </div>
         </fieldset>
       </form>
 
@@ -586,6 +622,7 @@
       const scoreRightRange = exampleSection.querySelector('#scoreRightExampleRange');
       const scoreRightInput = exampleSection.querySelector('#scoreRightExampleInput');
       const scoreRightValue = exampleSection.querySelector('#scoreRightExampleValue');
+      const confidenceButtons = exampleSection.querySelectorAll('.confidence-btn');
 
       function clampScore(rawValue) {
         if (rawValue === '' || rawValue === null || rawValue === undefined) return null;
@@ -657,6 +694,13 @@
       }
       ratingButtons.forEach(button => {
         button.addEventListener('click', handleRatingClick);
+      });
+
+      confidenceButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+          confidenceButtons.forEach(b => b.classList.remove('selected'));
+          event.currentTarget.classList.add('selected');
+        });
       });
     })();
   </script>
